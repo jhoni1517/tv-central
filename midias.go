@@ -80,3 +80,10 @@ func (m *Midias) Servir(w http.ResponseWriter, r *http.Request) {
 	}
 	http.ServeContent(w, r, arq, fi.ModTime(), f)
 }
+
+// Esquecer faz a próxima consulta reler a pasta (depois de enviar ou apagar um arquivo).
+func (m *Midias) Esquecer() {
+	m.mu.Lock()
+	m.quando = time.Time{}
+	m.mu.Unlock()
+}

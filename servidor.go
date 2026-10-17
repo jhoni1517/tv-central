@@ -27,20 +27,22 @@ func scriptSetas() string {
 }
 
 type Servidor struct {
-	cfg         Config
-	par         *Pareamento
-	ger         *Gerente
-	atu         *Atualizador
-	timer       Timer
-	midias      *Midias
-	clima       *Clima
-	conectados  atomic.Int32 // celulares com o controle aberto
-	novidade    string
-	novidadeAte time.Time
+	cfg           Config
+	par           *Pareamento
+	ger           *Gerente
+	atu           *Atualizador
+	timer         Timer
+	midias        *Midias
+	clima         *Clima
+	aj            *CofreAjustes
+	tentativasPin Limitador
+	conectados    atomic.Int32 // celulares com o controle aberto
+	novidade      string
+	novidadeAte   time.Time
 }
 
-func novoServidor(cfg Config, par *Pareamento, ger *Gerente) *Servidor {
-	return &Servidor{cfg: cfg, par: par, ger: ger, atu: novoAtualizador(), midias: &Midias{pasta: filepath.Join(ger.dados, "capas")}, clima: novoClima(cfg.Cidade)}
+func novoServidor(cfg Config, par *Pareamento, ger *Gerente, aj *CofreAjustes) *Servidor {
+	return &Servidor{aj: aj, cfg: cfg, par: par, ger: ger, atu: novoAtualizador(), midias: &Midias{pasta: filepath.Join(ger.dados, "capas")}, clima: novoClima(cidadeInicial(cfg, aj))}
 }
 
 // escutar tenta a porta por alguns segundos: depois de uma atualização a versão antiga ainda está saindo.
@@ -77,6 +79,7 @@ func (s *Servidor) rotas() http.Handler {
 	mux.HandleFunc("GET /api/apps", s.autenticado(s.listarApps))
 	mux.HandleFunc("GET /capa/{id}", s.capa)
 	mux.HandleFunc("GET /video/{id}", s.midias.Servir)
+	s.rotasPainel(mux)
 	mux.HandleFunc("GET /api/diagnostico", s.autenticado(s.diagnostico))
 	mux.HandleFunc("GET /ws", s.autenticado(s.controle))
 
@@ -152,7 +155,7 @@ func soLocal(h http.Handler) http.Handler {
 // cabeçalho Origin, e ele tem que ser o próprio TV Central.
 func mesmaOrigem(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.Method == http.MethodPost {
+		if r.Method != http.MethodGet && r.Method != http.MethodHead {
 			if o := r.Header.Get("Origin"); o != "" && o != "http://"+r.Host && o != "https://"+r.Host {
 				erro(w, http.StatusForbidden, "pedido de outro site recusado")
 				return
@@ -215,15 +218,16 @@ type appPublico struct {
 }
 
 func (s *Servidor) appsPublicos() []appPublico {
-	l := make([]appPublico, 0, len(s.cfg.apps))
-	for _, a := range s.cfg.apps {
+	vis := appsVisiveis(s.cfg.apps, s.aj.Ler())
+	l := make([]appPublico, 0, len(vis))
+	for _, a := range vis {
 		l = append(l, appPublico{a.ID, a.Nome, a.Cor, a.Cor2, a.Descricao})
 	}
 	return l
 }
 
 func (s *Servidor) listarApps(w http.ResponseWriter, r *http.Request) {
-	responder(w, map[string]any{"apps": s.appsPublicos(), "atual": s.ger.Atual()})
+	responder(w, map[string]any{"apps": s.appsPublicos(), "atual": s.ger.Atual(), "crianca": s.aj.Ler().Crianca.Ativo})
 }
 
 // diagnostico mostra no celular o que está acontecendo no PC (para achar bugs).
@@ -308,31 +312,41 @@ func (s *Servidor) acharApp(id string) (App, bool) {
 }
 
 func (s *Servidor) abrirApp(id string) error {
-	a, ok := s.acharApp(id)
-	if !ok {
-		return fmt.Errorf("app %q não existe", id)
+	aj := s.aj.Ler()
+	for _, a := range appsVisiveis(s.cfg.apps, aj) {
+		if a.ID == id {
+			a.Perfil = perfilNavegador(a, aj) // cada perfil com os próprios logins
+			return s.ger.Abrir(a)
+		}
 	}
-	return s.ger.Abrir(a)
+	if _, ok := s.acharApp(id); ok {
+		return fmt.Errorf("app %q não está liberado neste perfil", id)
+	}
+	return fmt.Errorf("app %q não existe", id)
 }
 
 func (s *Servidor) estadoTV(w http.ResponseWriter, r *http.Request) {
 	responder(w, map[string]any{
-		"codigo":      s.par.Pendente(),
-		"celulares":   s.par.Quantos(),
-		"enderecos":   enderecos(s.cfg.Porta),
-		"apps":        s.appsPublicos(),
-		"versao":      versao,
-		"atualizacao": s.atu.Status(),
-		"novidade":    s.textoNovidade(),
-		"intro":       s.cfg.intro(),
-		"volumeIntro": s.cfg.volumeIntro(),
-		"timer":       s.timer.Restante(),
-		"videos":      s.midias.IDs(),
-		"clima":       s.clima.Atual(),
-		"conectados":  s.conectados.Load(),
-		"videosFundo": s.cfg.videosFundo(),
-		"sons":        s.cfg.sons(),
-		"protetorMin": s.cfg.protetorMin(),
+		"codigo":          s.par.Pendente(),
+		"celulares":       s.par.Quantos(),
+		"enderecos":       enderecos(s.cfg.Porta),
+		"apps":            s.appsPublicos(),
+		"versao":          versao,
+		"atualizacao":     s.atu.Status(),
+		"novidade":        s.textoNovidade(),
+		"intro":           s.intro(),
+		"volumeIntro":     s.volumeIntro(),
+		"timer":           s.timer.Restante(),
+		"videos":          s.midias.IDs(),
+		"clima":           s.clima.Atual(),
+		"conectados":      s.conectados.Load(),
+		"videosFundo":     s.videosFundo(),
+		"perfil":          s.perfilPublico(),
+		"perfis":          s.aj.Ler().Perfis,
+		"perguntarPerfil": s.aj.Ler().PerguntarPerfil,
+		"crianca":         s.aj.Ler().Crianca.Ativo,
+		"sons":            s.sons(),
+		"protetorMin":     s.protetorMin(),
 	})
 }
 
@@ -509,4 +523,21 @@ func enderecos(porta int) []string {
 		}
 	}
 	return lista
+}
+
+func cidadeInicial(cfg Config, aj *CofreAjustes) string {
+	if a := aj.Ler(); a.Cidade != nil {
+		return *a.Cidade
+	}
+	return cfg.Cidade
+}
+
+func (s *Servidor) perfilPublico() map[string]string {
+	a := s.aj.Ler()
+	for _, p := range a.Perfis {
+		if p.ID == a.PerfilAtual {
+			return map[string]string{"id": p.ID, "nome": p.Nome, "emoji": p.Emoji, "cor": p.Cor}
+		}
+	}
+	return nil
 }

@@ -14,6 +14,7 @@ APPS = {  # id: (cor principal, cor secundária, estilo)
     "youtube": ("#FF0033", "#7a0019", "ondas"),
     "prime": ("#1A98FF", "#0a2a4a", "feixes"),
     "globoplay": ("#F25C2B", "#4a1406", "aurora"),
+    "youtubekids": ("#FF4E45", "#5b1a10", "estrelas"),
     "padrao": ("#3a6df0", "#0b1430", "estrelas"),
 }
 
@@ -87,5 +88,8 @@ def gerar(nome, c1, c2, estilo):
     img.save(f"web/tv/arte/{nome}.jpg", quality=82, optimize=True, progressive=True)
     img.crop((int(W * .38), 0, W, int((W * .62) * 9 / 16))).resize((480, 270), Image.LANCZOS).save(f"web/tv/arte/{nome}-p.jpg", quality=80, optimize=True)
 
+import sys
 for n, (c1, c2, e) in APPS.items():
+    if len(sys.argv) > 1 and n not in sys.argv[1:]:
+        continue
     gerar(n, c1, c2, e); print(n)

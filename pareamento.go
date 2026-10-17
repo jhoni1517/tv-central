@@ -129,3 +129,32 @@ func (p *Pareamento) salvar() error {
 	}
 	return os.Rename(tmp, p.arquivo)
 }
+
+// Limitador: depois de 5 erros seguidos, bloqueia por 1 minuto (PIN do modo criança).
+type Limitador struct {
+	mu    sync.Mutex
+	erros int
+	ate   time.Time
+}
+
+func (l *Limitador) Permitir() bool {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	return time.Now().After(l.ate)
+}
+
+func (l *Limitador) Errou() {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	l.erros++
+	if l.erros >= 5 {
+		l.erros = 0
+		l.ate = time.Now().Add(time.Minute)
+	}
+}
+
+func (l *Limitador) Zerar() {
+	l.mu.Lock()
+	l.erros = 0
+	l.mu.Unlock()
+}

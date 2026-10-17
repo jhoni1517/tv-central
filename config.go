@@ -41,6 +41,7 @@ var appsPadrao = []App{
 	{ID: "disney", Nome: "Disney+", Tipo: "web", Destino: "https://www.disneyplus.com", Cor: "#0063E5", Cor2: "#0b1a4a", Descricao: "Disney, Pixar, Marvel, Star Wars e National Geographic"},
 	{ID: "appletv", Nome: "Apple TV", Tipo: "web", Destino: "https://tv.apple.com", Cor: "#5c5c66", Cor2: "#111114", Descricao: "Séries e filmes originais da Apple"},
 	{ID: "youtube", Nome: "YouTube", Tipo: "web", Destino: "https://www.youtube.com/tv", Cor: "#FF0033", Cor2: "#7a0019", UserAgent: uaSmartTV, Perfil: "youtube", Setas: falso(), Descricao: "Vídeos, música e canais, com tela de TV"},
+	{ID: "youtubekids", Nome: "YouTube Kids", Tipo: "web", Destino: "https://www.youtubekids.com", Cor: "#FF4E45", Cor2: "#5b1a10", Descricao: "Vídeos para crianças"},
 	{ID: "prime", Nome: "Prime Video", Tipo: "web", Destino: "https://www.primevideo.com", Cor: "#1A98FF", Cor2: "#0a2a4a", Descricao: "Filmes, séries e esportes da Amazon"},
 	{ID: "globoplay", Nome: "Globoplay", Tipo: "web", Destino: "https://globoplay.globo.com", Cor: "#F25C2B", Cor2: "#4a1406", Descricao: "Novelas, séries e a Globo ao vivo"},
 }

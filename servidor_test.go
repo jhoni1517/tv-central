@@ -18,7 +18,8 @@ func servidorTeste(t *testing.T) (*Servidor, string) {
 	par, _ := novoPareamento(filepath.Join(dados, "c.json"))
 	ger := novoGerente(dados, cfg.Porta)
 	ger.naAreaDeTrabalho = true // sem navegador nos testes
-	return novoServidor(cfg, par, ger), dados
+	aj, _ := carregarAjustes(filepath.Join(dados, "ajustes.json"))
+	return novoServidor(cfg, par, ger, aj), dados
 }
 
 func pedir(h http.Handler, metodo, url, corpo string, cab map[string]string, remoto string) *httptest.ResponseRecorder {
@@ -140,4 +141,68 @@ func TestIDValido(t *testing.T) {
 		}
 	}
 	_ = time.Now
+}
+
+func tokenTeste(t *testing.T, s *Servidor) string {
+	s.par.IniciarCodigo()
+	tok, err := s.par.Confirmar(s.par.Pendente(), "teste")
+	if err != nil {
+		t.Fatal(err)
+	}
+	return tok
+}
+
+func TestPainelEnvioECrianca(t *testing.T) {
+	s, dados := servidorTeste(t)
+	h := s.rotas()
+	tok := tokenTeste(t, s)
+	cab := map[string]string{"X-Token": tok}
+
+	// envio de imagem pelo celular
+	corpo := "--XX\r\nContent-Disposition: form-data; name=\"arquivo\"; filename=\"foto.JPG\"\r\nContent-Type: image/jpeg\r\n\r\nIMAGEM-NOVA\r\n--XX--\r\n"
+	c := map[string]string{"X-Token": tok, "Content-Type": "multipart/form-data; boundary=XX"}
+	if w := pedir(h, "POST", "http://x/api/midia/netflix?tipo=capa", corpo, c, celular); w.Code != 200 {
+		t.Fatalf("envio: %d %s", w.Code, w.Body.String())
+	}
+	if w := pedir(h, "GET", "http://x/capa/netflix", "", nil, celular); w.Body.String() != "IMAGEM-NOVA" {
+		t.Error("capa enviada não aparece")
+	}
+	ruim := strings.Replace(corpo, "foto.JPG", "virus.exe", 1)
+	if w := pedir(h, "POST", "http://x/api/midia/netflix?tipo=capa", ruim, c, celular); w.Code != 400 {
+		t.Errorf("aceitou .exe: %d", w.Code)
+	}
+	if w := pedir(h, "DELETE", "http://x/api/midia/netflix?tipo=capa", "", cab, celular); w.Code != 200 {
+		t.Errorf("apagar: %d", w.Code)
+	}
+	if s.capaPropria("netflix") != "" {
+		t.Error("não apagou")
+	}
+	_ = dados
+
+	// ajustes e modo criança pela rede
+	if w := pedir(h, "POST", "http://x/api/ajustes", `{"Cidade":"Curitiba","ProtetorMin":15}`, cab, celular); w.Code != 200 {
+		t.Fatalf("ajustes: %d", w.Code)
+	}
+	if s.cidade() != "Curitiba" || s.protetorMin() != 15 {
+		t.Error("ajuste não valeu")
+	}
+	if w := pedir(h, "POST", "http://x/api/crianca/entrar", `{"Pin":"4321","Apps":["youtubekids"]}`, cab, celular); w.Code != 200 {
+		t.Fatalf("entrar: %d %s", w.Code, w.Body.String())
+	}
+	if err := s.abrirApp("netflix"); err == nil || !strings.Contains(err.Error(), "não está liberado") {
+		t.Errorf("abriu app bloqueado: %v", err)
+	}
+	if w := pedir(h, "POST", "http://x/api/midia/netflix?tipo=capa", corpo, c, celular); w.Code != 403 {
+		t.Errorf("enviou mídia no modo criança: %d", w.Code)
+	}
+	for i := 0; i < 5; i++ {
+		pedir(h, "POST", "http://x/api/crianca/sair", `{"Pin":"0000"}`, cab, celular)
+	}
+	if w := pedir(h, "POST", "http://x/api/crianca/sair", `{"Pin":"4321"}`, cab, celular); w.Code != 429 {
+		t.Errorf("sem bloqueio após 5 erros: %d", w.Code)
+	}
+	s.tentativasPin = Limitador{}
+	if w := pedir(h, "POST", "http://x/api/crianca/sair", `{"Pin":"4321"}`, cab, celular); w.Code != 200 {
+		t.Errorf("sair: %d", w.Code)
+	}
 }
