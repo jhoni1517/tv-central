@@ -27,7 +27,7 @@
   function videoGrande() {
     for (const v of document.querySelectorAll('video')) {
       const r = v.getBoundingClientRect();
-      if (r.width * r.height > innerWidth * innerHeight * 0.5 && v.readyState > 1) return v;
+      if (r.width * r.height > innerWidth * innerHeight * 0.85 && v.readyState > 1) return v;
     }
     return null;
   }

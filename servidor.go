@@ -8,6 +8,8 @@ import (
 	"log"
 	"net"
 	"net/http"
+	"os"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -62,6 +64,7 @@ func (s *Servidor) Rodar(l net.Listener) error {
 		responder(w, map[string]any{"ok": true, "versao": versao})
 	}))
 	mux.HandleFunc("GET /api/apps", s.autenticado(s.listarApps))
+	mux.HandleFunc("GET /api/diagnostico", s.autenticado(s.diagnostico))
 	mux.HandleFunc("GET /ws", s.autenticado(s.controle))
 
 	// Tela da TV (só o próprio computador)
@@ -134,8 +137,9 @@ func (s *Servidor) autenticado(f http.HandlerFunc) http.HandlerFunc {
 }
 
 func (s *Servidor) iniciarPareamento(w http.ResponseWriter, r *http.Request) {
-	s.par.IniciarCodigo()
-	s.ger.AbrirLauncher() // o código aparece na tela inicial
+	if s.par.IniciarCodigo() {
+		s.ger.AbrirLauncher() // o código aparece na tela inicial
+	}
 	responder(w, map[string]any{"ok": true})
 }
 
@@ -168,6 +172,35 @@ func (s *Servidor) appsPublicos() []appPublico {
 
 func (s *Servidor) listarApps(w http.ResponseWriter, r *http.Request) {
 	responder(w, map[string]any{"apps": s.appsPublicos(), "atual": s.ger.Atual()})
+}
+
+// diagnostico mostra no celular o que está acontecendo no PC (para achar bugs).
+func (s *Servidor) diagnostico(w http.ResponseWriter, r *http.Request) {
+	nav, _ := acharNavegador()
+	responder(w, map[string]any{
+		"versao":      versao,
+		"navegador":   nav,
+		"enderecos":   enderecos(s.cfg.Porta),
+		"appAberto":   s.ger.Atual(),
+		"telaInicial": s.ger.LauncherPID() != 0,
+		"atualizacao": s.atu.Status(),
+		"log":         ultimasLinhas(filepath.Join(s.ger.dados, "logs", "tvcentral.log"), 60),
+	})
+}
+
+func ultimasLinhas(arq string, n int) []string {
+	b, err := os.ReadFile(arq)
+	if err != nil {
+		return nil
+	}
+	if len(b) > 64<<10 {
+		b = b[len(b)-64<<10:]
+	}
+	linhas := strings.Split(strings.TrimRight(string(b), "\n"), "\n")
+	if len(linhas) > n {
+		linhas = linhas[len(linhas)-n:]
+	}
+	return linhas
 }
 
 func (s *Servidor) acharApp(id string) (App, bool) {

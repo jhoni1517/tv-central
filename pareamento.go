@@ -52,16 +52,18 @@ func aleatorio(n int) string {
 }
 
 // IniciarCodigo cria (ou reaproveita) um código de 6 dígitos válido por 3 minutos.
-func (p *Pareamento) IniciarCodigo() {
+// Devolve true quando o código é novo.
+func (p *Pareamento) IniciarCodigo() bool {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 	if p.codigo != "" && time.Now().Before(p.expira) {
-		return
+		return false
 	}
 	n, _ := rand.Int(rand.Reader, big.NewInt(1000000))
 	p.codigo = fmt.Sprintf("%06d", n.Int64())
 	p.expira = time.Now().Add(3 * time.Minute)
 	p.tentativas = 0
+	return true
 }
 
 // Pendente devolve o código que deve aparecer na TV.

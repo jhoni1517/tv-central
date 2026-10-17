@@ -58,7 +58,7 @@ function conectar() {
 function enviar(m) {
   const s = JSON.stringify(m);
   if (ws && ws.readyState === 1) ws.send(s);
-  else if (fila.length < 20) fila.push(s);
+  else if (m.t !== 'tecla' && m.t !== 'mover' && m.t !== 'rolar' && fila.length < 5) fila.push(s);
 }
 
 // Mede a latência (tempo de ida e volta até o PC) a cada 3 s com a tela ligada
@@ -183,6 +183,18 @@ function trocarAba(nome) {
   if (nome === 'apps') carregarApps();
 }
 $$('.abas button').forEach(b => b.onclick = () => trocarAba(b.dataset.aba));
+
+// Diagnóstico: versão, rede e últimas linhas do registro do PC
+$('#diag').addEventListener('toggle', async () => {
+  if (!$('#diag').open) return;
+  try {
+    const d = await api('api/diagnostico');
+    $('#diag-texto').textContent =
+      `Versão: ${d.versao}\nNavegador: ${d.navegador || 'não encontrado'}\nEndereço: ${(d.enderecos || []).join(', ')}\n` +
+      `App aberto: ${d.appAberto || 'nenhum'}\nTela inicial: ${d.telaInicial ? 'aberta' : 'fechada'}\n` +
+      (d.atualizacao ? `Atualização: ${d.atualizacao}\n` : '') + `\n--- Registro ---\n${(d.log || []).join('\n')}`;
+  } catch (e) { $('#diag-texto').textContent = 'Erro: ' + e.message; }
+});
 
 // ---------- Início ----------
 async function iniciar() {

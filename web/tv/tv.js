@@ -176,7 +176,9 @@ async function estado() {
     estado.ultimoStatus = s.atualizacao;
     const j = JSON.stringify(s.apps);
     if (j !== appsJson) { appsJson = j; montarApps(s.apps); }
-    $('#endereco').textContent = (s.enderecos || [])[0] || 'sem rede';
+    const end = (s.enderecos || [])[0] || '';
+    if (end !== estado.end) { estado.end = end; $('#qr img').src = 'qr.png?e=' + encodeURIComponent(end); }
+    $('#endereco').textContent = end || 'sem rede: conecte o Wi-Fi';
     if (s.celulares === 0 && !estado.mostrouQr) { $('#qr').classList.remove('oculto'); estado.mostrouQr = true; }
     $('#codigo').textContent = s.codigo || '';
     mostrar('#pareamento', !!s.codigo);

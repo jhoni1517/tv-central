@@ -47,7 +47,14 @@ func semJanela(nome string, args ...string) *exec.Cmd {
 }
 
 func matarArvore(pid int) {
-	_ = semJanela("taskkill", "/PID", strconv.Itoa(pid), "/T", "/F").Run()
+	// Primeiro pede para fechar (o navegador grava logins e cookies); só força se não fechar.
+	_ = semJanela("taskkill", "/PID", strconv.Itoa(pid), "/T").Run()
+	for i := 0; i < 20 && processoVivo(pid); i++ {
+		time.Sleep(150 * time.Millisecond)
+	}
+	if processoVivo(pid) {
+		_ = semJanela("taskkill", "/PID", strconv.Itoa(pid), "/T", "/F").Run()
+	}
 }
 
 var (
@@ -171,6 +178,10 @@ func instalar() error {
 		"remoteip=localsubnet", "profile=any").CombinedOutput(); err != nil {
 		log.Printf("firewall: %v %s", err, out)
 	}
+
+	// Wi-Fi em desempenho máximo na tomada: o modo econômico atrasa os comandos do celular
+	_ = semJanela("powercfg", "/setacvalueindex", "SCHEME_CURRENT", "19cbb8fa-5279-450e-9fac-8a3d5fedd0c1", "12bbebe6-58d6-4636-95bb-3217ef867c1a", "0").Run()
+	_ = semJanela("powercfg", "/setactive", "SCHEME_CURRENT").Run()
 
 	// Abrir junto com o Windows (sem Agendador de Tarefas e sem PowerShell)
 	k, _, err := registry.CreateKey(registry.CURRENT_USER, `Software\Microsoft\Windows\CurrentVersion\Run`, registry.SET_VALUE)

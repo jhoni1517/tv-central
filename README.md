@@ -65,6 +65,20 @@ Edite `%LOCALAPPDATA%\TVCentral\config.json` e reinicie o programa:
 - `setas: false` desliga a navegação por setas num site.
 - `perfil`: perfil separado do navegador (logins ficam salvos por perfil).
 
+## Atualizações
+
+O programa procura versão nova sozinho (90 s depois de abrir e a cada 6 horas), confere o SHA-256 e instala quando **nenhum app está aberto**. A tela inicial e o controle do celular recarregam sozinhos. Também dá para forçar em **Sistema → Atualizar** na tela inicial. Se a versão nova não abrir, ele volta para a anterior.
+
+Para desligar: `"atualizarAuto": false` no `config.json`.
+
+Para publicar uma versão: mude o número no arquivo `VERSION` e envie para a `main`. O GitHub Actions compila e publica em Releases.
+
+## Problemas
+
+No celular: **Apps → Diagnóstico** mostra a versão, a rede e as últimas linhas do registro do PC. O registro completo fica em `%LOCALAPPDATA%\TVCentral\logs\tvcentral.log`.
+
+O medidor ao lado do nome no controle mostra o tempo de resposta do PC: verde até 80 ms. Se ficar vermelho, o problema é o Wi-Fi.
+
 ## Remover
 
 `TVCentral.exe remover` (pede administrador). Os dados ficam em `%LOCALAPPDATA%\TVCentral`.
@@ -73,7 +87,8 @@ Edite `%LOCALAPPDATA%\TVCentral\config.json` e reinicie o programa:
 
 ```sh
 go run .                     # roda fora do Windows também (teclas só aparecem no log)
-GOOS=windows GOARCH=amd64 go build -ldflags "-H windowsgui -s -w" -o dist/TVCentral.exe .
+go test ./...
+GOOS=windows GOARCH=amd64 go build -ldflags "-H windowsgui -s -w -X main.versao=$(cat VERSION)" -o dist/TVCentral.exe .
 ```
 
 Estrutura:
@@ -83,6 +98,7 @@ Estrutura:
 | `main.go` | Início, instalar/remover |
 | `servidor.go` | HTTP, WebSocket do controle, rotas da TV |
 | `gerente.go` | Abre/fecha apps e a tela inicial no Edge |
+| `atualizar.go` | Atualização automática pelo GitHub Releases |
 | `cdp.go` | Coloca a navegação por setas nas páginas (porta de depuração local) |
 | `entrada_windows.go` | Teclado e mouse via `SendInput` |
 | `sistema_windows.go` | Foco de janela, firewall, início automático, desligar |
@@ -90,7 +106,6 @@ Estrutura:
 | `web/celular` | Controle do celular (PWA) |
 | `web/injetar/setas.js` | Navegação espacial por setas |
 
-Uma versão nova é publicada em Releases automaticamente ao criar uma tag `v*`.
 
 ## Segurança
 
