@@ -137,14 +137,8 @@
     el.scrollBy({ left: passo[0] * w, top: passo[1] * h, behavior: 'smooth' });
   }
 
-  function clicar(el) {
-    const r = el.getBoundingClientRect(), o = { bubbles: true, cancelable: true, clientX: r.left + r.width / 2, clientY: r.top + r.height / 2, button: 0 };
-    el.dispatchEvent(new PointerEvent('pointerdown', o));
-    el.dispatchEvent(new MouseEvent('mousedown', o));
-    el.dispatchEvent(new PointerEvent('pointerup', o));
-    el.dispatchEvent(new MouseEvent('mouseup', o));
-    el.click();
-  }
+  // Só o clique: disparar também pointerdown/mousedown fazia alguns sites agirem duas vezes
+  function clicar(el) { el.click(); }
 
   const DIRS = { ArrowUp: 'cima', ArrowDown: 'baixo', ArrowLeft: 'esquerda', ArrowRight: 'direita' };
 
@@ -156,9 +150,9 @@
     // Vídeo em tela grande: o player cuida das setas; Enter pausa; Esc volta.
     const v = videoGrande();
     if (v) {
-      if (document.fullscreenElement) return;
-      if (e.key === 'Enter') { v.paused ? v.play() : v.pause(); parar(e); }
-      else if (e.key === 'Escape') { history.back(); parar(e); }
+      if (e.key === 'Enter') { v.paused ? v.play() : v.pause(); parar(e); return; }
+      if (document.fullscreenElement) return; // Esc sai da tela cheia normalmente
+      if (e.key === 'Escape') { history.back(); parar(e); }
       return;
     }
 

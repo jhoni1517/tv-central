@@ -200,7 +200,7 @@ func (a *Atualizador) Aplicar(ger *Gerente) error {
 }
 
 // Loop verifica 90 s depois de abrir e a cada 6 h; instala quando não há app aberto.
-func (a *Atualizador) Loop(dados string, ger *Gerente) {
+func (a *Atualizador) Loop(dados string, ger *Gerente, livre func() bool) {
 	time.Sleep(90 * time.Second)
 	ultima := time.Time{}
 	for {
@@ -213,7 +213,7 @@ func (a *Atualizador) Loop(dados string, ger *Gerente) {
 		a.mu.Lock()
 		pronto := a.pronto != ""
 		a.mu.Unlock()
-		if pronto && ger.Atual() == "" {
+		if pronto && ger.Atual() == "" && livre() {
 			if err := a.Aplicar(ger); err != nil {
 				log.Printf("atualização falhou: %v", err)
 			}

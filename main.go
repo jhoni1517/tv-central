@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"net/http"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -108,6 +109,11 @@ func rodar(op Opcoes) {
 		srv.novidadeAte = time.Now().Add(2 * time.Minute)
 	}
 
+	// Já está rodando? (ex.: clicou no atalho de novo) Só traz a tela inicial para frente.
+	if op.AtualizadoDe == "" && jaRodando(cfg.Porta) {
+		log.Printf("já está aberto: só mostrando a tela inicial")
+		return
+	}
 	ouvinte, err := escutar(cfg.Porta)
 	if err != nil {
 		log.Printf("porta %d: %v", cfg.Porta, err)
@@ -133,7 +139,7 @@ func rodar(op Opcoes) {
 	}
 	atalhosGlobais(ger.Inicio)
 	if cfg.atualizarAuto() {
-		go srv.atu.Loop(dados, ger)
+		go srv.atu.Loop(dados, ger, func() bool { return srv.timer.Restante() == 0 })
 	}
 	if err := srv.Rodar(ouvinte); err != nil {
 		log.Printf("servidor parou: %v", err)
@@ -152,4 +158,16 @@ func prepararCapas(dados string) {
 			"Pode ser .jpg, .png ou .webp (de preferência 1600x900, mais escura à esquerda).\r\n"+
 			"Ela aparece no fundo e no cartão do app. Apague o arquivo para voltar à arte padrão.\r\n"), 0o644)
 	}
+}
+
+func jaRodando(porta int) bool {
+	cli := &http.Client{Timeout: 1500 * time.Millisecond}
+	req, _ := http.NewRequest("POST", fmt.Sprintf("http://127.0.0.1:%d/tv/api/mostrar", porta), strings.NewReader("{}"))
+	req.Header.Set("Content-Type", "application/json")
+	resp, err := cli.Do(req)
+	if err != nil {
+		return false
+	}
+	resp.Body.Close()
+	return resp.StatusCode == 200
 }

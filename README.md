@@ -11,6 +11,8 @@ tela inicial bonita em tela cheia, streamings com **navegação por setas** e **
 - **Digitar e falar**: o texto vai para a TV com Enter e o campo **limpa sozinho**. Busca por voz em português.
 - **Pareamento seguro**: o código aparece na TV e só celulares pareados controlam o PC.
 - **QR code na tela**: aponte a câmera do celular e pronto.
+- **Visual de TV Box**: arte de fundo para cada app, cartões com imagem, abertura com música, sons de navegação e protetor de tela.
+- **Desligar em…**: 30, 60, 90 ou 120 minutos, pela TV ou pelo celular.
 - **Instalador sem PowerShell**: um `.exe` só, funciona até em Windows "otimizado" sem PowerShell.
 
 ## Instalar
@@ -79,6 +81,7 @@ Edite `%LOCALAPPDATA%\TVCentral\config.json` e reinicie o programa:
 - `setas: false` desliga a navegação por setas num site.
 - `perfil`: perfil separado do navegador (logins ficam salvos por perfil).
 - `"intro": false` desliga a abertura; `"volumeIntro"` vai de 0 a 1 (padrão 0.5).
+- `"sons": false` desliga os sons de navegação; `"protetorMin"`: minutos até o protetor de tela (0 desliga).
 
 ## Atualizações
 
@@ -93,6 +96,10 @@ Para publicar uma versão: mude o número no arquivo `VERSION` e envie para a `m
 No celular: **Apps → Diagnóstico** mostra a versão, a rede e as últimas linhas do registro do PC. O registro completo fica em `%LOCALAPPDATA%\TVCentral\logs\tvcentral.log`.
 
 O medidor ao lado do nome no controle mostra o tempo de resposta do PC: verde até 80 ms. Se ficar vermelho, o problema é o Wi-Fi.
+
+## Imagens dos apps
+
+As artes que vêm no programa são próprias (sem logos). Para usar a sua imagem num app, coloque em `%LOCALAPPDATA%\TVCentral\capas\` um arquivo com o id do app: `netflix.jpg`, `hbomax.jpg`, `disney.jpg`, `appletv.jpg`, `youtube.jpg`, `prime.jpg`, `globoplay.jpg` (ou `.png`/`.webp`, de preferência 1600×900 e mais escura à esquerda).
 
 ## Remover
 

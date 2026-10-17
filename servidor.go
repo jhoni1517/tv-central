@@ -76,6 +76,10 @@ func (s *Servidor) Rodar(l net.Listener) error {
 	mux.HandleFunc("POST /tv/api/abrir", soLocalF(s.abrirPelaTV))
 	mux.HandleFunc("POST /tv/api/sistema", soLocalF(s.sistema))
 	mux.HandleFunc("POST /tv/api/atualizar", soLocalF(s.atualizarAgora))
+	mux.HandleFunc("POST /tv/api/mostrar", soLocalF(func(w http.ResponseWriter, r *http.Request) {
+		go s.ger.AbrirLauncher()
+		responder(w, map[string]any{"ok": true, "versao": versao})
+	}))
 	mux.HandleFunc("POST /tv/api/timer", soLocalF(func(w http.ResponseWriter, r *http.Request) {
 		var req struct{ Min int }
 		_ = json.NewDecoder(http.MaxBytesReader(w, r.Body, 1024)).Decode(&req)
@@ -83,7 +87,7 @@ func (s *Servidor) Rodar(l net.Listener) error {
 		responder(w, map[string]any{"timer": s.timer.Restante()})
 	}))
 
-	srv := &http.Server{Handler: mux, ReadHeaderTimeout: 10 * time.Second}
+	srv := &http.Server{Handler: mesmaOrigem(mux), ReadHeaderTimeout: 10 * time.Second}
 	log.Printf("ouvindo na porta %d: %s", s.cfg.Porta, strings.Join(enderecos(s.cfg.Porta), " "))
 	return srv.Serve(l)
 }
@@ -117,9 +121,33 @@ func ehLocal(r *http.Request) bool {
 
 func soLocal(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if !ehLocal(r) {
+		// Além de vir do próprio PC, o endereço tem que ser 127.0.0.1/localhost: impede que um site
+		// qualquer aberto no navegador use um nome de domínio apontado para cá (DNS rebinding).
+		host, _, err := net.SplitHostPort(r.Host)
+		if err != nil {
+			host = r.Host
+		}
+		if !ehLocal(r) || (host != "127.0.0.1" && host != "localhost" && host != "[::1]" && host != "::1") {
 			erro(w, http.StatusForbidden, "só no próprio computador")
 			return
+		}
+		h.ServeHTTP(w, r)
+	})
+}
+
+// mesmaOrigem barra pedidos POST disparados por outros sites (CSRF): o navegador manda o
+// cabeçalho Origin, e ele tem que ser o próprio TV Central.
+func mesmaOrigem(h http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodPost {
+			if o := r.Header.Get("Origin"); o != "" && o != "http://"+r.Host && o != "https://"+r.Host {
+				erro(w, http.StatusForbidden, "pedido de outro site recusado")
+				return
+			}
+			if s := r.Header.Get("Sec-Fetch-Site"); s == "cross-site" || s == "same-site" {
+				erro(w, http.StatusForbidden, "pedido de outro site recusado")
+				return
+			}
 		}
 		h.ServeHTTP(w, r)
 	})

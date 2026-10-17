@@ -18,6 +18,7 @@ const portaDepuracao = 9222
 // Gerente abre e fecha os apps e mantém o launcher.
 type Gerente struct {
 	mu           sync.Mutex
+	trocando     sync.Mutex // um abrir/fechar por vez (dois toques rápidos não abrem dois apps)
 	dados        string
 	porta        int
 	atual        *os.Process
@@ -157,7 +158,9 @@ func (g *Gerente) LauncherPID() int {
 
 // Abrir fecha o app atual e abre o novo em tela cheia.
 func (g *Gerente) Abrir(app App) error {
-	g.Fechar()
+	g.trocando.Lock()
+	defer g.trocando.Unlock()
+	g.fechar()
 	g.mu.Lock()
 	defer g.mu.Unlock()
 
@@ -234,6 +237,9 @@ func (g *Gerente) AdotarApp(apps []App) {
 	}
 	for _, a := range apps {
 		if a.ID == id {
+			if a.Tipo != "programa" && !ehNavegador(pid) {
+				return // o Windows reaproveitou o número do processo
+			}
 			if p, err := os.FindProcess(pid); err == nil {
 				g.mu.Lock()
 				g.vigiarApp(p, a)
@@ -247,6 +253,12 @@ func (g *Gerente) AdotarApp(apps []App) {
 
 // Fechar encerra o app aberto (e os processos filhos).
 func (g *Gerente) Fechar() {
+	g.trocando.Lock()
+	defer g.trocando.Unlock()
+	g.fechar()
+}
+
+func (g *Gerente) fechar() {
 	g.mu.Lock()
 	p, cancel, web := g.atual, g.cancelar, g.atualWeb
 	g.atual, g.atualID, g.cancelar = nil, "", nil
@@ -269,7 +281,9 @@ func (g *Gerente) Fechar() {
 
 // Inicio fecha o app e volta para a tela inicial.
 func (g *Gerente) Inicio() {
-	g.Fechar()
+	g.trocando.Lock()
+	g.fechar()
+	g.trocando.Unlock()
 	g.AbrirLauncher()
 }
 
