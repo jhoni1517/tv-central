@@ -22,7 +22,7 @@ type Gerente struct {
 	atual        *exec.Cmd
 	atualID      string
 	cancelar     context.CancelFunc
-	launcher     *exec.Cmd
+	launcherPID  int
 	launcherVivo bool
 }
 
@@ -83,8 +83,8 @@ func argsBase(perfil string) []string {
 func (g *Gerente) AbrirLauncher() {
 	g.mu.Lock()
 	defer g.mu.Unlock()
-	if g.launcher != nil && g.launcherVivo {
-		go focarProcesso(g.launcher.Process.Pid)
+	if g.launcherVivo {
+		go focarProcesso(g.launcherPID)
 		return
 	}
 	nav, edge := acharNavegador()
@@ -103,18 +103,48 @@ func (g *Gerente) AbrirLauncher() {
 		log.Printf("launcher: %v", err)
 		return
 	}
-	g.launcher, g.launcherVivo = cmd, true
 	log.Printf("launcher aberto (pid %d)", cmd.Process.Pid)
+	g.vigiarLauncher(cmd.Process)
+	go focarProcesso(cmd.Process.Pid)
+}
+
+// vigiarLauncher marca o launcher como aberto até o processo terminar. Chame com g.mu travado.
+func (g *Gerente) vigiarLauncher(p *os.Process) {
+	g.launcherPID, g.launcherVivo = p.Pid, true
 	go func() {
-		_ = cmd.Wait()
+		_, _ = p.Wait()
 		g.mu.Lock()
-		if g.launcher == cmd {
+		if g.launcherPID == p.Pid {
 			g.launcherVivo = false
 		}
 		g.mu.Unlock()
 		log.Printf("launcher fechou")
 	}()
-	go focarProcesso(cmd.Process.Pid)
+}
+
+// AdotarLauncher assume a tela inicial aberta pela versão anterior (depois de uma atualização).
+func (g *Gerente) AdotarLauncher(pid int) bool {
+	if pid <= 0 || !processoVivo(pid) {
+		return false
+	}
+	p, err := os.FindProcess(pid)
+	if err != nil {
+		return false
+	}
+	g.mu.Lock()
+	defer g.mu.Unlock()
+	g.vigiarLauncher(p)
+	log.Printf("tela inicial mantida da versão anterior (pid %d)", pid)
+	return true
+}
+
+func (g *Gerente) LauncherPID() int {
+	g.mu.Lock()
+	defer g.mu.Unlock()
+	if !g.launcherVivo {
+		return 0
+	}
+	return g.launcherPID
 }
 
 // Abrir fecha o app atual e abre o novo em tela cheia.

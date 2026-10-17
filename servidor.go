@@ -24,16 +24,32 @@ func scriptSetas() string {
 }
 
 type Servidor struct {
-	cfg Config
-	par *Pareamento
-	ger *Gerente
+	cfg         Config
+	par         *Pareamento
+	ger         *Gerente
+	atu         *Atualizador
+	novidade    string
+	novidadeAte time.Time
 }
 
 func novoServidor(cfg Config, par *Pareamento, ger *Gerente) *Servidor {
-	return &Servidor{cfg: cfg, par: par, ger: ger}
+	return &Servidor{cfg: cfg, par: par, ger: ger, atu: novoAtualizador()}
 }
 
-func (s *Servidor) Rodar() error {
+// escutar tenta a porta por alguns segundos: depois de uma atualização a versão antiga ainda está saindo.
+func escutar(porta int) (net.Listener, error) {
+	var err error
+	for i := 0; i < 30; i++ {
+		var l net.Listener
+		if l, err = net.Listen("tcp", fmt.Sprintf(":%d", porta)); err == nil {
+			return l, nil
+		}
+		time.Sleep(500 * time.Millisecond)
+	}
+	return nil, err
+}
+
+func (s *Servidor) Rodar(l net.Listener) error {
 	mux := http.NewServeMux()
 	celular, _ := fs.Sub(arquivosWeb, "web/celular")
 	tv, _ := fs.Sub(arquivosWeb, "web/tv")
@@ -42,7 +58,9 @@ func (s *Servidor) Rodar() error {
 	mux.Handle("GET /", semCache(http.FileServer(http.FS(celular))))
 	mux.HandleFunc("POST /api/parear/iniciar", s.iniciarPareamento)
 	mux.HandleFunc("POST /api/parear", s.parear)
-	mux.HandleFunc("GET /api/eu", s.autenticado(func(w http.ResponseWriter, r *http.Request) { responder(w, map[string]any{"ok": true}) }))
+	mux.HandleFunc("GET /api/eu", s.autenticado(func(w http.ResponseWriter, r *http.Request) {
+		responder(w, map[string]any{"ok": true, "versao": versao})
+	}))
 	mux.HandleFunc("GET /api/apps", s.autenticado(s.listarApps))
 	mux.HandleFunc("GET /ws", s.autenticado(s.controle))
 
@@ -52,14 +70,11 @@ func (s *Servidor) Rodar() error {
 	mux.HandleFunc("GET /tv/qr.png", soLocalF(s.qr))
 	mux.HandleFunc("POST /tv/api/abrir", soLocalF(s.abrirPelaTV))
 	mux.HandleFunc("POST /tv/api/sistema", soLocalF(s.sistema))
+	mux.HandleFunc("POST /tv/api/atualizar", soLocalF(s.atualizarAgora))
 
-	srv := &http.Server{
-		Addr:              fmt.Sprintf(":%d", s.cfg.Porta),
-		Handler:           mux,
-		ReadHeaderTimeout: 10 * time.Second,
-	}
+	srv := &http.Server{Handler: mux, ReadHeaderTimeout: 10 * time.Second}
 	log.Printf("ouvindo na porta %d: %s", s.cfg.Porta, strings.Join(enderecos(s.cfg.Porta), " "))
-	return srv.ListenAndServe()
+	return srv.Serve(l)
 }
 
 func responder(w http.ResponseWriter, v any) {
@@ -174,12 +189,40 @@ func (s *Servidor) abrirApp(id string) error {
 
 func (s *Servidor) estadoTV(w http.ResponseWriter, r *http.Request) {
 	responder(w, map[string]any{
-		"codigo":    s.par.Pendente(),
-		"celulares": s.par.Quantos(),
-		"enderecos": enderecos(s.cfg.Porta),
-		"apps":      s.appsPublicos(),
-		"versao":    versao,
+		"codigo":      s.par.Pendente(),
+		"celulares":   s.par.Quantos(),
+		"enderecos":   enderecos(s.cfg.Porta),
+		"apps":        s.appsPublicos(),
+		"versao":      versao,
+		"atualizacao": s.atu.Status(),
+		"novidade":    s.textoNovidade(),
 	})
+}
+
+func (s *Servidor) textoNovidade() string {
+	if time.Now().Before(s.novidadeAte) {
+		return s.novidade
+	}
+	return ""
+}
+
+// atualizarAgora: botão "Atualizar" da tela inicial (nenhum app aberto, então já instala).
+func (s *Servidor) atualizarAgora(w http.ResponseWriter, r *http.Request) {
+	tem, err := s.atu.Verificar(s.ger.dados)
+	if err != nil {
+		responder(w, map[string]any{"mensagem": "Não deu para verificar: " + err.Error()})
+		return
+	}
+	if !tem {
+		responder(w, map[string]any{"mensagem": "Você já tem a versão mais nova (" + versao + ")"})
+		return
+	}
+	responder(w, map[string]any{"mensagem": "Instalando a versão nova…"})
+	go func() {
+		if err := s.atu.Aplicar(s.ger); err != nil {
+			log.Printf("atualização: %v", err)
+		}
+	}()
 }
 
 func (s *Servidor) qr(w http.ResponseWriter, r *http.Request) {

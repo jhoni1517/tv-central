@@ -47,11 +47,13 @@ var appsPadrao = []App{
 type Config struct {
 	Porta         int               `json:"porta"`
 	AbrirLauncher *bool             `json:"abrirLauncher,omitempty"`
+	AtualizarAuto *bool             `json:"atualizarAuto,omitempty"`
 	Apps          []json.RawMessage `json:"apps"`
 	apps          []App
 }
 
 func (c Config) abrirLauncher() bool { return c.AbrirLauncher == nil || *c.AbrirLauncher }
+func (c Config) atualizarAuto() bool { return c.AtualizarAuto == nil || *c.AtualizarAuto }
 
 const exemploConfig = `{
   "porta": 8765,

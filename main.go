@@ -8,10 +8,12 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
+	"time"
 )
 
-var versao = "0.1.0"
+var versao = "dev" // preenchida na compilação: -ldflags "-X main.versao=0.2.0"
 
 func main() {
 	cmd := ""
@@ -24,7 +26,7 @@ func main() {
 	case "remover", "desinstalar":
 		sair(remover())
 	case "servidor", "rodar":
-		rodar()
+		rodar(lerOpcoes(os.Args[2:]))
 	case "versao", "version":
 		fmt.Println("TV Central", versao)
 	default:
@@ -33,7 +35,7 @@ func main() {
 			sair(instalar())
 			return
 		}
-		rodar()
+		rodar(Opcoes{})
 	}
 }
 
@@ -54,7 +56,26 @@ func pastaDados() string {
 	return filepath.Join(base, "TVCentral")
 }
 
-func rodar() {
+// Opcoes vêm da versão anterior quando ela se atualiza e abre esta.
+type Opcoes struct {
+	LauncherPID  int
+	AtualizadoDe string
+}
+
+func lerOpcoes(args []string) Opcoes {
+	var o Opcoes
+	for _, a := range args {
+		if v, ok := strings.CutPrefix(a, "--launcher="); ok {
+			o.LauncherPID, _ = strconv.Atoi(v)
+		}
+		if v, ok := strings.CutPrefix(a, "--atualizado-de="); ok {
+			o.AtualizadoDe = v
+		}
+	}
+	return o
+}
+
+func rodar(op Opcoes) {
 	dados := pastaDados()
 	if err := os.MkdirAll(filepath.Join(dados, "logs"), 0o755); err != nil {
 		avisar("TV Central", err.Error())
@@ -76,13 +97,38 @@ func rodar() {
 	}
 	ger := novoGerente(dados, cfg.Porta)
 	srv := novoServidor(cfg, par, ger)
+	if op.AtualizadoDe != "" {
+		log.Printf("atualizado de %s para %s", op.AtualizadoDe, versao)
+		srv.novidade = fmt.Sprintf("Atualizado para a versão %s", versao)
+		srv.novidadeAte = time.Now().Add(2 * time.Minute)
+	}
 
-	if cfg.abrirLauncher() {
+	ouvinte, err := escutar(cfg.Porta)
+	if err != nil {
+		log.Printf("porta %d: %v", cfg.Porta, err)
+		if op.AtualizadoDe != "" && voltarVersaoAnterior() {
+			log.Printf("versão nova não abriu: voltei para a anterior")
+			os.Exit(1)
+		}
+		avisar("TV Central", fmt.Sprintf("Não consegui usar a porta %d. Outro programa (por exemplo o controle antigo) está usando ela.\n\n%v", cfg.Porta, err))
+		os.Exit(1)
+	}
+	// Versão nova funcionando: a cópia antiga pode ir embora
+	go func() {
+		time.Sleep(2 * time.Minute)
+		if exe, err := os.Executable(); err == nil {
+			_ = os.Remove(exe + ".antigo")
+		}
+	}()
+
+	if !(op.LauncherPID > 0 && ger.AdotarLauncher(op.LauncherPID)) && cfg.abrirLauncher() {
 		go ger.AbrirLauncher()
 	}
-	if err := srv.Rodar(); err != nil {
+	if cfg.atualizarAuto() {
+		go srv.atu.Loop(dados, ger)
+	}
+	if err := srv.Rodar(ouvinte); err != nil {
 		log.Printf("servidor parou: %v", err)
-		avisar("TV Central", fmt.Sprintf("Não consegui usar a porta %d. Outro programa (por exemplo o controle antigo) está usando ela.\n\n%v", cfg.Porta, err))
 		os.Exit(1)
 	}
 }

@@ -2,7 +2,7 @@
 const $ = s => document.querySelector(s);
 const $$ = s => [...document.querySelectorAll(s)];
 let token = localStorage.getItem('tvc-token') || '';
-let ws = null, espera = 500, fila = [];
+let ws = null, espera = 500, fila = [], versaoServidor = '';
 
 const vibrar = (ms = 12) => navigator.vibrate && navigator.vibrate(ms);
 
@@ -50,6 +50,8 @@ function conectar() {
     const m = JSON.parse(ev.data);
     if (m.erro) console.warn(m.erro);
     if (m.t === 'pong' && m.id) mostrarLatencia(Date.now() - m.id);
+    // O PC foi atualizado: recarrega o controle para pegar a versão nova
+    if (m.versao) { if (!versaoServidor) versaoServidor = m.versao; else if (m.versao !== versaoServidor) location.reload(); }
   };
 }
 

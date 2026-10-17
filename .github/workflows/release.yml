@@ -1,9 +1,10 @@
 name: build
 
+# A cada envio para a main: compila. Se o número no arquivo VERSION for novo,
+# publica a versão em Releases, e os computadores com o TV Central se atualizam sozinhos.
 on:
   push:
     branches: [main]
-    tags: ['v*']
   pull_request:
 
 permissions:
@@ -17,19 +18,27 @@ jobs:
       - uses: actions/setup-go@v5
         with:
           go-version-file: go.mod
-      - run: go vet ./... && GOOS=windows go vet ./...
+      - name: Conferir código
+        run: go vet ./... && GOOS=windows go vet ./... && go test ./...
       - name: Compilar para Windows
         run: |
-          VERSAO="${GITHUB_REF_NAME#v}"
+          VERSAO="$(tr -d ' \r\n' < VERSION)"
+          echo "VERSAO=$VERSAO" >> "$GITHUB_ENV"
           GOOS=windows GOARCH=amd64 go build -trimpath \
             -ldflags "-H windowsgui -s -w -X main.versao=${VERSAO}" -o dist/TVCentral.exe .
+          (cd dist && sha256sum TVCentral.exe > TVCentral.exe.sha256)
       - uses: actions/upload-artifact@v4
         with:
           name: TVCentral
-          path: dist/TVCentral.exe
-      - name: Publicar release
-        if: startsWith(github.ref, 'refs/tags/v')
-        uses: softprops/action-gh-release@v2
-        with:
-          files: dist/TVCentral.exe
-          generate_release_notes: true
+          path: dist/
+      - name: Publicar versão nova
+        if: github.event_name == 'push'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if gh release view "v$VERSAO" >/dev/null 2>&1; then
+            echo "v$VERSAO já publicada: nada a fazer"
+          else
+            gh release create "v$VERSAO" dist/TVCentral.exe dist/TVCentral.exe.sha256 \
+              --title "TV Central $VERSAO" --generate-notes --target "$GITHUB_SHA"
+          fi

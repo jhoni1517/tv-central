@@ -34,3 +34,11 @@ func matarArvore(pid int) {
 	_ = syscall.Kill(-pid, syscall.SIGKILL)
 	_ = exec.Command("kill", strconv.Itoa(pid)).Run()
 }
+
+func processoVivo(pid int) bool { return syscall.Kill(pid, 0) == nil }
+
+func trocarPrograma(novo string, launcherPID int) error {
+	return errors.New("atualização automática só no Windows")
+}
+
+func voltarVersaoAnterior() bool { return false }

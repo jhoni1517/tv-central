@@ -80,3 +80,7 @@ kbd { font-family: inherit; padding: .15vw .5vw; border-radius: .35vw; backgroun
 @keyframes gira { to { transform: rotate(360deg); } }
 
 .oculto { display: none !important; }
+
+.pequenos .cartao small { display: block; font-size: .8vw; font-weight: 400; color: var(--suave); }
+.aviso { position: fixed; top: 2.4vw; left: 50%; transform: translateX(-50%); padding: .9vw 2vw; border-radius: 99vw;
+  background: #fff; color: #000; font-size: 1.2vw; font-weight: 600; z-index: 20; }

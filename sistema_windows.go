@@ -204,3 +204,59 @@ func remover() error {
 	avisar("TV Central", "Removido do início do Windows e do firewall.\nSeus dados ficaram em "+pastaDados()+" (pode apagar a pasta se quiser).")
 	return nil
 }
+
+// ---------- atualização ----------
+
+func processoVivo(pid int) bool {
+	h, err := windows.OpenProcess(windows.PROCESS_QUERY_LIMITED_INFORMATION, false, uint32(pid))
+	if err != nil {
+		return false
+	}
+	defer windows.CloseHandle(h)
+	var codigo uint32
+	if windows.GetExitCodeProcess(h, &codigo) != nil {
+		return false
+	}
+	return codigo == 259 // STILL_ACTIVE
+}
+
+// trocarPrograma: o Windows não deixa sobrescrever um .exe em uso, mas deixa renomear.
+// O atual vira TVCentral.exe.antigo, o novo entra no lugar e é aberto (ele espera a porta liberar).
+func trocarPrograma(novo string, launcherPID int) error {
+	exe := exeInstalado()
+	atual, _ := os.Executable()
+	if !strings.EqualFold(filepath.Clean(atual), filepath.Clean(exe)) {
+		return fmt.Errorf("só atualizo a cópia instalada (%s)", exe)
+	}
+	antigo := exe + ".antigo"
+	_ = os.Remove(antigo)
+	if err := os.Rename(exe, antigo); err != nil {
+		return err
+	}
+	if err := copiarArquivo(novo, exe); err != nil {
+		_ = os.Rename(antigo, exe)
+		return err
+	}
+	cmd := exec.Command(exe, "servidor", "--launcher="+strconv.Itoa(launcherPID), "--atualizado-de="+versao)
+	if err := cmd.Start(); err != nil {
+		_ = os.Remove(exe)
+		_ = os.Rename(antigo, exe)
+		return err
+	}
+	return nil
+}
+
+// voltarVersaoAnterior: se a versão nova não conseguir abrir, volta a antiga.
+func voltarVersaoAnterior() bool {
+	exe := exeInstalado()
+	antigo := exe + ".antigo"
+	if !existe(antigo) {
+		return false
+	}
+	ruim := exe + ".falhou"
+	_ = os.Remove(ruim)
+	if os.Rename(exe, ruim) != nil || os.Rename(antigo, exe) != nil {
+		return false
+	}
+	return exec.Command(exe, "servidor").Start() == nil
+}

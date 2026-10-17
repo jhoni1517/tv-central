@@ -5,6 +5,15 @@ let pos = { linha: 0, col: 0 };
 let modal = null; // 'confirmar' quando a caixa de confirmação está aberta
 let confirmarAcao = null;
 let appsJson = '';
+let versaoInicial = null;
+
+function aviso(texto, ms = 6000) {
+  const el = $('#aviso');
+  el.textContent = texto;
+  mostrar('#aviso', true);
+  clearTimeout(aviso.t);
+  aviso.t = setTimeout(() => mostrar('#aviso', false), ms);
+}
 
 function saudacao() {
   const h = new Date().getHours();
@@ -64,7 +73,7 @@ function focar() {
     raiz.setProperty('--cor', '#3a6df0');
     raiz.setProperty('--cor2', '#0b1430');
     $('#titulo').textContent = saudacao();
-    $('#subtitulo').textContent = el.textContent.trim();
+    $('#subtitulo').textContent = el.querySelector('span:last-child').firstChild.textContent.trim();
   }
 }
 
@@ -100,6 +109,14 @@ async function ativar() {
   }
   const acao = el.dataset.acao;
   if (acao === 'celular') { $('#qr').classList.toggle('oculto'); return; }
+  if (acao === 'atualizar') {
+    aviso('Procurando versão nova…');
+    try {
+      const r = await fetch('api/atualizar', { method: 'POST' });
+      aviso((await r.json()).mensagem || 'Pronto');
+    } catch (_) { aviso('Sem conexão com o programa'); }
+    return;
+  }
   confirmarAcao = acao;
   $('#confirmar-texto').textContent = acao === 'desligar' ? 'Desligar o computador?' : 'Reiniciar o computador?';
   abrirModal();
@@ -150,6 +167,13 @@ async function estado() {
   try {
     const r = await fetch('api/estado', { cache: 'no-store' });
     const s = await r.json();
+    // Programa atualizado: recarrega a tela para pegar o visual novo
+    if (versaoInicial === null) versaoInicial = s.versao;
+    else if (s.versao !== versaoInicial) { location.reload(); return; }
+    $('#versao').textContent = 'versão ' + s.versao;
+    if (s.novidade && !sessionStorage.getItem('aviso-' + s.versao)) { sessionStorage.setItem('aviso-' + s.versao, '1'); aviso(s.novidade, 8000); }
+    if (s.atualizacao && s.atualizacao !== estado.ultimoStatus) aviso(s.atualizacao);
+    estado.ultimoStatus = s.atualizacao;
     const j = JSON.stringify(s.apps);
     if (j !== appsJson) { appsJson = j; montarApps(s.apps); }
     $('#endereco').textContent = (s.enderecos || [])[0] || 'sem rede';
