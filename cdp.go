@@ -87,3 +87,27 @@ func sessaoCDP(ctx context.Context, wsURL, script string) error {
 		}
 	}
 }
+
+// fecharNavegador manda o comando Browser.close pela porta de depuração local.
+func fecharNavegador(porta int) bool {
+	cli := &http.Client{Timeout: 2 * time.Second}
+	resp, err := cli.Get(fmt.Sprintf("http://127.0.0.1:%d/json/version", porta))
+	if err != nil {
+		return false
+	}
+	var v struct {
+		WS string `json:"webSocketDebuggerUrl"`
+	}
+	_ = json.NewDecoder(resp.Body).Decode(&v)
+	resp.Body.Close()
+	if v.WS == "" {
+		return false
+	}
+	d := websocket.Dialer{HandshakeTimeout: 2 * time.Second}
+	c, _, err := d.Dial(v.WS, nil)
+	if err != nil {
+		return false
+	}
+	defer c.Close()
+	return c.WriteJSON(map[string]any{"id": 1, "method": "Browser.close"}) == nil
+}

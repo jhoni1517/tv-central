@@ -48,8 +48,11 @@ func semJanela(nome string, args ...string) *exec.Cmd {
 
 func matarArvore(pid int) {
 	// Primeiro pede para fechar (o navegador grava logins e cookies); só força se não fechar.
+	if !processoVivo(pid) {
+		return
+	}
 	_ = semJanela("taskkill", "/PID", strconv.Itoa(pid), "/T").Run()
-	for i := 0; i < 20 && processoVivo(pid); i++ {
+	for i := 0; i < 35 && processoVivo(pid); i++ {
 		time.Sleep(150 * time.Millisecond)
 	}
 	if processoVivo(pid) {

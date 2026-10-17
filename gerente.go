@@ -21,6 +21,7 @@ type Gerente struct {
 	dados        string
 	porta        int
 	atual        *os.Process
+	atualWeb     bool
 	atualID      string
 	cancelar     context.CancelFunc
 	launcherPID  int
@@ -178,10 +179,9 @@ func (g *Gerente) Abrir(app App) error {
 		if app.UserAgent != "" {
 			args = append(args, "--user-agent="+app.UserAgent)
 		}
-		if app.usaSetas() {
-			// Só escuta em 127.0.0.1: usado para colocar a navegação por setas nas páginas.
-			args = append(args, "--remote-debugging-port="+strconv.Itoa(portaDepuracao))
-		}
+		// Porta de depuração (só em 127.0.0.1): coloca as setas nas páginas e fecha o
+		// navegador do jeito certo, salvando os logins.
+		args = append(args, "--remote-debugging-port="+strconv.Itoa(portaDepuracao))
 		cmd = exec.Command(nav, args...)
 	}
 	if err := cmd.Start(); err != nil {
@@ -196,7 +196,7 @@ func (g *Gerente) Abrir(app App) error {
 // vigiarApp acompanha o app aberto e volta para a tela inicial quando ele fechar. Chame com g.mu travado.
 func (g *Gerente) vigiarApp(p *os.Process, app App) {
 	inicio := time.Now()
-	g.atual, g.atualID = p, app.ID
+	g.atual, g.atualID, g.atualWeb = p, app.ID, app.Tipo != "programa"
 	ctx, cancel := context.WithCancel(context.Background())
 	g.cancelar = cancel
 	_ = os.WriteFile(filepath.Join(g.dados, "app.pid"), []byte(app.ID+" "+strconv.Itoa(p.Pid)), 0o644)
@@ -248,14 +248,20 @@ func (g *Gerente) AdotarApp(apps []App) {
 // Fechar encerra o app aberto (e os processos filhos).
 func (g *Gerente) Fechar() {
 	g.mu.Lock()
-	p, cancel := g.atual, g.cancelar
+	p, cancel, web := g.atual, g.cancelar, g.atualWeb
 	g.atual, g.atualID, g.cancelar = nil, "", nil
 	g.mu.Unlock()
 	if cancel != nil {
 		cancel()
 	}
 	if p != nil {
-		matarArvore(p.Pid)
+		// Pede ao próprio navegador para fechar: ele grava cookies e logins antes de sair.
+		if web && fecharNavegador(portaDepuracao) {
+			for i := 0; i < 40 && processoVivo(p.Pid); i++ {
+				time.Sleep(150 * time.Millisecond)
+			}
+		}
+		matarArvore(p.Pid) // só age se ainda estiver aberto
 		_ = p.Kill()
 		_ = os.Remove(filepath.Join(g.dados, "app.pid"))
 	}
