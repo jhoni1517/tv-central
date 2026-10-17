@@ -13,6 +13,9 @@ tela inicial bonita em tela cheia, streamings com **navegação por setas** e **
 - **QR code na tela**: aponte a câmera do celular e pronto.
 - **Visual de TV Box**: arte de fundo para cada app, cartões com imagem, abertura com música, sons de navegação e protetor de tela.
 - **Desligar em…**: 30, 60, 90 ou 120 minutos, pela TV ou pelo celular.
+- **Painel de ajustes no celular** (⚙): ordem e visibilidade dos apps, enviar imagem e vídeo de cada app, clima, sons, abertura, protetor.
+- **Perfis**: "Quem está assistindo?", cada um com seus apps e **logins separados** nos streamings.
+- **Modo criança**: só os apps escolhidos, sem desligar/ajustes, e para sair só com PIN no celular.
 - **Instalador sem PowerShell**: um `.exe` só, funciona até em Windows "otimizado" sem PowerShell.
 
 ## Instalar

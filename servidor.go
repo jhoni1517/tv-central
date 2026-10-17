@@ -326,6 +326,7 @@ func (s *Servidor) abrirApp(id string) error {
 }
 
 func (s *Servidor) estadoTV(w http.ResponseWriter, r *http.Request) {
+	aj := s.aj.Ler()
 	responder(w, map[string]any{
 		"codigo":          s.par.Pendente(),
 		"celulares":       s.par.Quantos(),
@@ -342,9 +343,9 @@ func (s *Servidor) estadoTV(w http.ResponseWriter, r *http.Request) {
 		"conectados":      s.conectados.Load(),
 		"videosFundo":     s.videosFundo(),
 		"perfil":          s.perfilPublico(),
-		"perfis":          s.aj.Ler().Perfis,
-		"perguntarPerfil": s.aj.Ler().PerguntarPerfil,
-		"crianca":         s.aj.Ler().Crianca.Ativo,
+		"perfis":          aj.Perfis,
+		"perguntarPerfil": aj.PerguntarPerfil,
+		"crianca":         aj.Crianca.Ativo,
 		"sons":            s.sons(),
 		"protetorMin":     s.protetorMin(),
 	})

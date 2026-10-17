@@ -390,9 +390,18 @@ func (s *Servidor) enviarMidia(w http.ResponseWriter, r *http.Request) {
 	}
 	s.removerMidia(id, tipo) // tira a versão anterior (pode ter outra extensão)
 	destino := filepath.Join(pasta, id+ext)
-	if err := os.Rename(tmp.Name(), destino); err != nil {
+	// No Windows o arquivo antigo pode estar aberto (tocando na TV): tenta de novo algumas vezes
+	var errMover error
+	for i := 0; i < 10; i++ {
+		if errMover = os.Rename(tmp.Name(), destino); errMover == nil {
+			break
+		}
+		s.removerMidia(id, tipo)
+		time.Sleep(300 * time.Millisecond)
+	}
+	if errMover != nil {
 		os.Remove(tmp.Name())
-		erro(w, 500, err.Error())
+		erro(w, http.StatusConflict, "o arquivo antigo está em uso na TV: tente de novo em alguns segundos")
 		return
 	}
 	s.midias.Esquecer()
