@@ -58,6 +58,7 @@ function conectar() {
     const m = JSON.parse(ev.data);
     if (m.erro) console.warn(m.erro);
     if (m.t === 'pong' && m.id) mostrarLatencia(Date.now() - m.id);
+    if (m.t === 'pong') mostrarEstado(m);
     // O PC foi atualizado: recarrega o controle para pegar a versão nova
     if (m.versao) { if (!versaoServidor) versaoServidor = m.versao; else if (m.versao !== versaoServidor) location.reload(); }
   };
@@ -168,6 +169,19 @@ if (Reconhecer) {
   pad.addEventListener('pointercancel', e => dedos.delete(e.pointerId));
 })();
 
+// ---------- O que está na TV e timer ----------
+const nomesApps = {};
+function mostrarEstado(m) {
+  const el = $('#na-tv');
+  el.classList.toggle('oculto', !m.atual);
+  if (m.atual) el.innerHTML = 'Na TV agora: <b></b>', el.querySelector('b').textContent = nomesApps[m.atual] || m.atual;
+  $('#timer-cel').textContent = m.timer ? Math.ceil(m.timer / 60) + ' min' : 'desativado';
+}
+$$('[data-timer]').forEach(b => b.onclick = () => {
+  enviar({ t: 'timer', min: +b.dataset.timer }); vibrar(20);
+  setTimeout(() => ws && ws.readyState === 1 && ws.send(JSON.stringify({ t: 'ping', id: Date.now() })), 150);
+});
+
 // ---------- Apps ----------
 async function carregarApps() {
   try {
@@ -175,6 +189,7 @@ async function carregarApps() {
     const lista = $('#lista-apps');
     lista.innerHTML = '';
     for (const a of apps) {
+      nomesApps[a.ID] = a.Nome;
       const b = document.createElement('button');
       b.textContent = a.Nome;
       b.style.setProperty('--c1', a.Cor);
@@ -214,6 +229,7 @@ async function iniciar() {
   }
   tela('controle');
   conectar();
+  carregarApps(); // para saber o nome do app que está na TV
 }
 
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});

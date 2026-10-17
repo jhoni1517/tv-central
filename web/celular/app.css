@@ -85,3 +85,9 @@ button { font: inherit; color: inherit; border: 0; background: none; touch-actio
 #diag pre { white-space: pre-wrap; word-break: break-word; font-size: 11px; line-height: 1.45; color: var(--suave); max-height: 50vh; overflow: auto; user-select: text; -webkit-user-select: text; }
 
 .reconectando { margin: 0 18px 4px; padding: 8px 12px; border-radius: 12px; background: #3a2a10; color: #f5c542; font-size: 13px; text-align: center; }
+
+.na-tv { margin: 0 18px 2px; font-size: 13px; color: var(--suave); }
+.na-tv b { color: var(--texto); }
+.timer { background: var(--painel); border-radius: 16px; padding: 12px 14px; display: flex; flex-direction: column; gap: 10px; }
+.timer-botoes { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.timer-botoes button { padding: 10px 0; border-radius: 12px; background: var(--painel2); font-weight: 600; font-size: 13px; }

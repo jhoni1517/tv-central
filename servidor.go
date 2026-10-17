@@ -30,6 +30,7 @@ type Servidor struct {
 	par         *Pareamento
 	ger         *Gerente
 	atu         *Atualizador
+	timer       Timer
 	novidade    string
 	novidadeAte time.Time
 }
@@ -75,6 +76,12 @@ func (s *Servidor) Rodar(l net.Listener) error {
 	mux.HandleFunc("POST /tv/api/abrir", soLocalF(s.abrirPelaTV))
 	mux.HandleFunc("POST /tv/api/sistema", soLocalF(s.sistema))
 	mux.HandleFunc("POST /tv/api/atualizar", soLocalF(s.atualizarAgora))
+	mux.HandleFunc("POST /tv/api/timer", soLocalF(func(w http.ResponseWriter, r *http.Request) {
+		var req struct{ Min int }
+		_ = json.NewDecoder(http.MaxBytesReader(w, r.Body, 1024)).Decode(&req)
+		s.timer.Definir(req.Min)
+		responder(w, map[string]any{"timer": s.timer.Restante()})
+	}))
 
 	srv := &http.Server{Handler: mux, ReadHeaderTimeout: 10 * time.Second}
 	log.Printf("ouvindo na porta %d: %s", s.cfg.Porta, strings.Join(enderecos(s.cfg.Porta), " "))
@@ -278,6 +285,9 @@ func (s *Servidor) estadoTV(w http.ResponseWriter, r *http.Request) {
 		"novidade":    s.textoNovidade(),
 		"intro":       s.cfg.intro(),
 		"volumeIntro": s.cfg.volumeIntro(),
+		"timer":       s.timer.Restante(),
+		"sons":        s.cfg.sons(),
+		"protetorMin": s.cfg.protetorMin(),
 	})
 }
 
@@ -352,7 +362,8 @@ type Msg struct {
 	Enter bool   `json:"enter"` // texto: apertar Enter depois
 	DX    int    `json:"dx"`
 	DY    int    `json:"dy"`
-	ID    int64  `json:"id"` // ping: devolvido no pong para medir a latência
+	ID    int64  `json:"id"`  // ping: devolvido no pong para medir a latência
+	Min   int    `json:"min"` // timer: minutos até desligar (0 cancela)
 }
 
 func (s *Servidor) controle(w http.ResponseWriter, r *http.Request) {
@@ -369,7 +380,7 @@ func (s *Servidor) controle(w http.ResponseWriter, r *http.Request) {
 		}
 		switch m.T {
 		case "ping":
-			_ = c.WriteJSON(map[string]any{"t": "pong", "id": m.ID, "atual": s.ger.Atual(), "versao": versao})
+			_ = c.WriteJSON(map[string]any{"t": "pong", "id": m.ID, "atual": s.ger.Atual(), "versao": versao, "timer": s.timer.Restante()})
 		case "abrir", "inicio", "sistema":
 			// Abrir/fechar app demora: roda à parte para as próximas teclas não ficarem na fila.
 			go func(m Msg) {
@@ -410,6 +421,8 @@ func (s *Servidor) executar(m Msg) error {
 		s.ger.Inicio()
 	case "sistema":
 		return acaoSistema(m.K)
+	case "timer":
+		s.timer.Definir(m.Min)
 	case "ping":
 	default:
 		return fmt.Errorf("comando desconhecido %q", m.T)

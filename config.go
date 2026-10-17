@@ -51,6 +51,8 @@ type Config struct {
 	AtualizarAuto *bool             `json:"atualizarAuto,omitempty"`
 	Intro         *bool             `json:"intro,omitempty"`       // abertura com música ao ligar
 	VolumeIntro   *float64          `json:"volumeIntro,omitempty"` // 0 a 1 (padrão 0.5)
+	Sons          *bool             `json:"sons,omitempty"`        // sons ao navegar na tela inicial
+	ProtetorMin   *int              `json:"protetorMin,omitempty"` // minutos parado até o protetor de tela (0 desliga)
 	Apps          []json.RawMessage `json:"apps"`
 	apps          []App
 }
@@ -58,6 +60,13 @@ type Config struct {
 func (c Config) abrirLauncher() bool { return c.AbrirLauncher == nil || *c.AbrirLauncher }
 func (c Config) atualizarAuto() bool { return c.AtualizarAuto == nil || *c.AtualizarAuto }
 func (c Config) intro() bool         { return c.Intro == nil || *c.Intro }
+func (c Config) sons() bool          { return c.Sons == nil || *c.Sons }
+func (c Config) protetorMin() int {
+	if c.ProtetorMin == nil {
+		return 10
+	}
+	return max(0, *c.ProtetorMin)
+}
 func (c Config) volumeIntro() float64 {
 	if c.VolumeIntro == nil {
 		return 0.5
@@ -70,6 +79,8 @@ const exemploConfig = `{
   "abrirLauncher": true,
   "intro": true,
   "volumeIntro": 0.5,
+  "sons": true,
+  "protetorMin": 10,
   "apps": []
 }
 `

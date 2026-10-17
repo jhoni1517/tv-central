@@ -35,6 +35,7 @@
   </header>
 
   <div id="reconectando" class="reconectando oculto">Reconectando ao PC…</div>
+  <div id="na-tv" class="na-tv oculto"></div>
 
   <div id="aba-controle" class="aba">
     <form id="form-texto" class="texto">
@@ -71,6 +72,12 @@
 
   <div id="aba-apps" class="aba oculto">
     <div id="lista-apps" class="apps"></div>
+    <div class="timer">
+      <span>Desligar em <b id="timer-cel">—</b></span>
+      <div class="timer-botoes">
+        <button data-timer="30">30 min</button><button data-timer="60">1 h</button><button data-timer="90">1h30</button><button data-timer="0">Cancelar</button>
+      </div>
+    </div>
     <div class="sistema">
       <button data-sistema="reiniciar">Reiniciar PC</button>
       <button data-sistema="desligar">Desligar PC</button>

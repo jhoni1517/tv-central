@@ -116,15 +116,18 @@ function trocarArte(id) {
 function mover(dl, dc) {
   if (dl) {
     const nl = pos.linha + dl;
-    if (nl < 0 || nl >= linhas.length || !linhas[nl].length) return;
+    if (nl < 0 || nl >= linhas.length || !linhas[nl].length) { Som.limite(); return; }
     // Mantém a posição horizontal aproximada ao trocar de linha
     const x = linhas[pos.linha][pos.col].getBoundingClientRect().left;
     let melhor = 0, dist = Infinity;
     linhas[nl].forEach((el, i) => { const d = Math.abs(el.getBoundingClientRect().left - x); if (d < dist) { dist = d; melhor = i; } });
     pos = { linha: nl, col: melhor };
   } else {
-    pos.col = Math.max(0, Math.min(linhas[pos.linha].length - 1, pos.col + dc));
+    const nc = Math.max(0, Math.min(linhas[pos.linha].length - 1, pos.col + dc));
+    if (nc === pos.col) { Som.limite(); return; }
+    pos.col = nc;
   }
+  Som.mover();
   focar();
 }
 
@@ -136,6 +139,7 @@ async function post(url, corpo) {
 async function ativar() {
   const el = linhas[pos.linha][pos.col];
   if (!el) return;
+  Som.ok();
   if (el.dataset.id) {
     try { localStorage.setItem('ultimo-app', el.dataset.id); } catch (_) {}
     $('#abrindo-texto').textContent = `Abrindo ${el.dataset.nome}…`;
@@ -146,6 +150,7 @@ async function ativar() {
   }
   const acao = el.dataset.acao;
   if (acao === 'celular') { $('#qr').classList.toggle('oculto'); return; }
+  if (acao === 'timer') { proximoTimer(); return; }
   if (acao === 'atualizar') {
     aviso('Procurando versão nova…');
     try {
@@ -185,7 +190,7 @@ document.addEventListener('keydown', async e => {
   else if (k === 'ArrowUp') mover(-1, 0);
   else if (k === 'ArrowDown') mover(1, 0);
   else if (k === 'Enter' || k === ' ') ativar();
-  else if (k === 'Escape') $('#qr').classList.add('oculto');
+  else if (k === 'Escape') { Som.voltar(); $('#qr').classList.add('oculto'); }
 });
 
 // Mouse também funciona (modo touchpad do celular)
@@ -219,6 +224,9 @@ async function estado() {
     if (versaoInicial === null) versaoInicial = s.versao;
     else if (s.versao !== versaoInicial) { location.reload(); return; }
     $('#versao').textContent = 'versão ' + s.versao;
+    Som.ligado = s.sons !== false;
+    if (typeof s.protetorMin === 'number') protetorMin = s.protetorMin;
+    mostrarTimer(s.timer || 0);
     if (s.novidade && !sessionStorage.getItem('aviso-' + s.versao)) { sessionStorage.setItem('aviso-' + s.versao, '1'); aviso(s.novidade, 8000); }
     if (s.atualizacao && s.atualizacao !== estado.ultimoStatus) aviso(s.atualizacao);
     estado.ultimoStatus = s.atualizacao;
@@ -233,6 +241,89 @@ async function estado() {
     if (s.codigo) $('#qr').classList.add('oculto');
   } catch (_) { /* servidor reiniciando */ }
 }
+
+// ---------- Sons de navegação (curtinhos e baixos; "sons": false no config.json desliga) ----------
+const Som = {
+  ctx: null, ligado: true,
+  tocar(freqs, dur = 0.05, vol = 0.035, tipo = 'sine') {
+    if (!this.ligado) return;
+    try {
+      this.ctx = this.ctx || new (window.AudioContext || window.webkitAudioContext)();
+      const t = this.ctx.currentTime;
+      freqs.forEach((f, i) => {
+        const o = this.ctx.createOscillator(), g = this.ctx.createGain();
+        o.type = tipo; o.frequency.value = f;
+        const t0 = t + i * dur * 0.8;
+        g.gain.setValueAtTime(0.0001, t0);
+        g.gain.exponentialRampToValueAtTime(vol, t0 + 0.006);
+        g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+        o.connect(g).connect(this.ctx.destination); o.start(t0); o.stop(t0 + dur + 0.02);
+      });
+    } catch (_) {}
+  },
+  mover() { this.tocar([1320], 0.04, 0.025); },
+  limite() { this.tocar([180], 0.07, 0.04, 'triangle'); },
+  ok() { this.tocar([880, 1320], 0.07, 0.035); },
+  voltar() { this.tocar([700, 470], 0.06, 0.03); },
+};
+
+// ---------- Desligar em… (timer) ----------
+const OPCOES_TIMER = [0, 30, 60, 90, 120];
+let timerRestante = 0;
+function mostrarTimer(seg) {
+  timerRestante = seg;
+  const min = Math.ceil(seg / 60);
+  $('#timer-txt').textContent = seg ? `em ${min} min` : 'desativado';
+  $('#timer-chip').textContent = seg ? `☾ ${min} min` : '';
+  mostrar('#timer-chip', !!seg);
+  if (seg && seg <= 60 && !mostrarTimer.avisou) { mostrarTimer.avisou = true; aviso('O computador vai desligar em 1 minuto'); }
+  if (!seg || seg > 60) mostrarTimer.avisou = false;
+}
+async function proximoTimer() {
+  const atual = Math.ceil(timerRestante / 60);
+  const prox = OPCOES_TIMER.find(m => m > atual + 1) || 0;
+  try {
+    const r = await fetch('api/timer', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ min: prox }) });
+    mostrarTimer((await r.json()).timer);
+    aviso(prox ? `Desliga sozinho em ${prox} minutos` : 'Desligamento programado cancelado', 3000);
+  } catch (_) { aviso('Sem conexão com o programa'); }
+}
+
+// ---------- Protetor de tela ----------
+let protetorMin = 10, ultimoUso = Date.now(), protetorAtivo = false, protetorVez = 0, protetorIdx = 0;
+function usou() { ultimoUso = Date.now(); }
+function ligarProtetor() {
+  protetorAtivo = true;
+  mostrar('#protetor', true);
+  trocarProtetor();
+  ligarProtetor.t = setInterval(trocarProtetor, 15000);
+}
+function desligarProtetor() {
+  protetorAtivo = false;
+  clearInterval(ligarProtetor.t);
+  mostrar('#protetor', false);
+  usou();
+}
+function trocarProtetor() {
+  const ids = linhas[0].map(b => b.dataset.id);
+  if (!ids.length) return;
+  const id = ids[protetorIdx++ % ids.length];
+  const camadas = [$('#prot-a'), $('#prot-b')];
+  const nova = camadas[protetorVez = 1 - protetorVez];
+  nova.style.backgroundImage = `url("/capa/${id}")`;
+  nova.classList.add('ativa'); camadas[1 - protetorVez].classList.remove('ativa');
+  const d = new Date();
+  $('#prot-relogio').textContent = d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+  $('#prot-data').textContent = $('#data').textContent;
+}
+// Qualquer tecla/mouse com o protetor ligado só desliga ele (não navega)
+window.addEventListener('keydown', e => { if (protetorAtivo) { e.preventDefault(); e.stopImmediatePropagation(); desligarProtetor(); } else usou(); }, true);
+window.addEventListener('mousemove', () => { if (protetorAtivo) desligarProtetor(); else usou(); }, true);
+window.addEventListener('focus', () => { if (protetorAtivo) desligarProtetor(); usou(); });
+setInterval(() => {
+  if (protetorAtivo) { $('#prot-relogio').textContent = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }); return; }
+  if (protetorMin > 0 && !modal && Date.now() - ultimoUso > protetorMin * 60000 && document.hasFocus()) ligarProtetor();
+}, 5000);
 
 relogio();
 setInterval(relogio, 5000);

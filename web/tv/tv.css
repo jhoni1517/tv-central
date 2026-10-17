@@ -125,3 +125,11 @@ body.com-mouse .cartao, body.com-mouse .botao { cursor: pointer !important; }
 body.na-intro header, body.na-intro main, body.na-intro footer { opacity: 0; }
 body.entrando header, body.entrando main, body.entrando footer { animation: entrar .7s cubic-bezier(.2,.8,.2,1); }
 @keyframes entrar { from { opacity: 0; transform: translateY(2vw); } to { opacity: 1; transform: none; } }
+
+.chip { align-self: center; padding: .35vw .9vw; border-radius: 99vw; background: rgba(255,255,255,.12); font-size: 1vw; }
+/* Protetor de tela: arte trocando devagar + relógio (só opacidade) */
+.protetor { position: fixed; inset: 0; z-index: 40; background: #000; }
+.protetor .arte { transition: opacity 2.5s ease; }
+.prot-hora { position: absolute; left: 5vw; bottom: 6vw; display: flex; flex-direction: column; text-shadow: 0 .2vw 1vw rgba(0,0,0,.6); }
+#prot-relogio { font-size: 9vw; font-weight: 200; line-height: 1; }
+#prot-data { font-size: 1.8vw; color: rgba(255,255,255,.75); margin-top: .6vw; }

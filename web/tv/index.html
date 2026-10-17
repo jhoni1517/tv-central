@@ -12,7 +12,7 @@
 
 <header>
   <div class="marca"><img class="logo-ic" src="icone.png" alt="">TV Central</div>
-  <div class="hora"><span id="relogio">--:--</span><span id="data"></span></div>
+  <div class="hora"><span id="timer-chip" class="chip oculto"></span><span id="relogio">--:--</span><span id="data"></span></div>
 </header>
 
 <main>
@@ -33,6 +33,7 @@
       <button class="cartao sis" data-acao="celular"><span class="icone">📱</span><span>Conectar celular</span></button>
       <button class="cartao sis" data-acao="reiniciar"><span class="icone">↻</span><span>Reiniciar</span></button>
       <button class="cartao sis" data-acao="desligar"><span class="icone">⏻</span><span>Desligar</span></button>
+      <button class="cartao sis" data-acao="timer"><span class="icone">☾</span><span>Desligar em…<small id="timer-txt">desativado</small></span></button>
       <button class="cartao sis" data-acao="atualizar"><span class="icone">⇪</span><span>Atualizar<small id="versao"></small></span></button>
     </div>
   </section>
@@ -72,6 +73,11 @@
 </div>
 
 <div id="aviso" class="aviso oculto"></div>
+
+<div id="protetor" class="protetor oculto">
+  <div class="arte" id="prot-a"></div><div class="arte" id="prot-b"></div>
+  <div class="prot-hora"><span id="prot-relogio"></span><span id="prot-data"></span></div>
+</div>
 
 <div id="abrindo" class="sobre abrindo oculto">
   <div class="caixa"><div class="giro"></div><p id="abrindo-texto">Abrindo…</p></div>
