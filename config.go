@@ -52,6 +52,7 @@ type Config struct {
 	Intro         *bool             `json:"intro,omitempty"`       // abertura com música ao ligar
 	VolumeIntro   *float64          `json:"volumeIntro,omitempty"` // 0 a 1 (padrão 0.5)
 	Sons          *bool             `json:"sons,omitempty"`        // sons ao navegar na tela inicial
+	VideosFundo   *bool             `json:"videosFundo,omitempty"` // tocar os vídeos da pasta capas no fundo
 	ProtetorMin   *int              `json:"protetorMin,omitempty"` // minutos parado até o protetor de tela (0 desliga)
 	Apps          []json.RawMessage `json:"apps"`
 	apps          []App
@@ -61,6 +62,7 @@ func (c Config) abrirLauncher() bool { return c.AbrirLauncher == nil || *c.Abrir
 func (c Config) atualizarAuto() bool { return c.AtualizarAuto == nil || *c.AtualizarAuto }
 func (c Config) intro() bool         { return c.Intro == nil || *c.Intro }
 func (c Config) sons() bool          { return c.Sons == nil || *c.Sons }
+func (c Config) videosFundo() bool   { return c.VideosFundo == nil || *c.VideosFundo }
 func (c Config) protetorMin() int {
 	if c.ProtetorMin == nil {
 		return 10

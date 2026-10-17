@@ -31,12 +31,13 @@ type Servidor struct {
 	ger         *Gerente
 	atu         *Atualizador
 	timer       Timer
+	midias      *Midias
 	novidade    string
 	novidadeAte time.Time
 }
 
 func novoServidor(cfg Config, par *Pareamento, ger *Gerente) *Servidor {
-	return &Servidor{cfg: cfg, par: par, ger: ger, atu: novoAtualizador()}
+	return &Servidor{cfg: cfg, par: par, ger: ger, atu: novoAtualizador(), midias: &Midias{pasta: filepath.Join(ger.dados, "capas")}}
 }
 
 // escutar tenta a porta por alguns segundos: depois de uma atualização a versão antiga ainda está saindo.
@@ -66,6 +67,7 @@ func (s *Servidor) Rodar(l net.Listener) error {
 	}))
 	mux.HandleFunc("GET /api/apps", s.autenticado(s.listarApps))
 	mux.HandleFunc("GET /capa/{id}", s.capa)
+	mux.HandleFunc("GET /video/{id}", s.midias.Servir)
 	mux.HandleFunc("GET /api/diagnostico", s.autenticado(s.diagnostico))
 	mux.HandleFunc("GET /ws", s.autenticado(s.controle))
 
@@ -314,6 +316,8 @@ func (s *Servidor) estadoTV(w http.ResponseWriter, r *http.Request) {
 		"intro":       s.cfg.intro(),
 		"volumeIntro": s.cfg.volumeIntro(),
 		"timer":       s.timer.Restante(),
+		"videos":      s.midias.IDs(),
+		"videosFundo": s.cfg.videosFundo(),
 		"sons":        s.cfg.sons(),
 		"protetorMin": s.cfg.protetorMin(),
 	})

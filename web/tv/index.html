@@ -8,7 +8,7 @@
 <link rel="icon" href="icone.png">
 </head>
 <body>
-<div id="fundo"><div class="arte" id="arte-a"></div><div class="arte" id="arte-b"></div></div>
+<div id="fundo"><div class="arte" id="arte-a"></div><div class="arte" id="arte-b"></div><video class="arte" id="video-fundo" muted loop playsinline preload="none" disablepictureinpicture></video></div>
 
 <header>
   <div class="marca"><img class="logo-ic" src="icone.png" alt="">TV Central</div>
@@ -33,7 +33,7 @@
       <button class="cartao sis" data-acao="celular"><span class="icone">📱</span><span>Conectar celular</span></button>
       <button class="cartao sis" data-acao="reiniciar"><span class="icone">↻</span><span>Reiniciar</span></button>
       <button class="cartao sis" data-acao="desligar"><span class="icone">⏻</span><span>Desligar</span></button>
-      <button class="cartao sis" data-acao="timer"><span class="icone">☾</span><span>Desligar em…<small id="timer-txt">desativado</small></span></button>
+      <button class="cartao sis" data-acao="timer"><span class="icone">☾</span><span>Timer<small id="timer-txt">desativado</small></span></button>
       <button class="cartao sis" data-acao="atualizar"><span class="icone">⇪</span><span>Atualizar<small id="versao"></small></span></button>
     </div>
   </section>
@@ -76,6 +76,7 @@
 
 <div id="protetor" class="protetor oculto">
   <div class="arte" id="prot-a"></div><div class="arte" id="prot-b"></div>
+  <video class="arte" id="prot-video" muted loop playsinline preload="none" disablepictureinpicture></video>
   <div class="prot-hora"><span id="prot-relogio"></span><span id="prot-data"></span></div>
 </div>
 

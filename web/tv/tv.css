@@ -133,3 +133,11 @@ body.entrando header, body.entrando main, body.entrando footer { animation: entr
 .prot-hora { position: absolute; left: 5vw; bottom: 6vw; display: flex; flex-direction: column; text-shadow: 0 .2vw 1vw rgba(0,0,0,.6); }
 #prot-relogio { font-size: 9vw; font-weight: 200; line-height: 1; }
 #prot-data { font-size: 1.8vw; color: rgba(255,255,255,.75); margin-top: .6vw; }
+
+video.arte { width: 100%; height: 100%; object-fit: cover; object-position: right center; }
+
+/* Com vídeo no fundo: escurece a esquerda e embaixo para o texto continuar legível */
+#fundo::before { content: ""; position: absolute; inset: 0; z-index: 1; opacity: 0; transition: opacity .5s;
+  background: linear-gradient(90deg, rgba(6,7,11,.9) 0%, rgba(6,7,11,.55) 40%, rgba(6,7,11,.15) 75%); }
+#fundo.com-video::before { opacity: 1; }
+#fundo::after { z-index: 1; }

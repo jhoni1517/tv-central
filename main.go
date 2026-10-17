@@ -152,11 +152,15 @@ func prepararCapas(dados string) {
 	pasta := filepath.Join(dados, "capas")
 	_ = os.MkdirAll(pasta, 0o755)
 	leia := filepath.Join(pasta, "LEIA-ME.txt")
-	if _, err := os.Stat(leia); err != nil {
-		_ = os.WriteFile(leia, []byte("Coloque aqui uma imagem para cada app, com o id do app no nome:\r\n"+
+	{ // sempre regrava: o texto pode mudar entre versões
+		_ = os.WriteFile(leia, []byte("Coloque aqui uma imagem e/ou um vídeo para cada app, com o id do app no nome:\r\n"+
 			"  netflix.jpg, hbomax.jpg, disney.jpg, appletv.jpg, youtube.jpg, prime.jpg, globoplay.jpg\r\n"+
 			"Pode ser .jpg, .png ou .webp (de preferência 1600x900, mais escura à esquerda).\r\n"+
-			"Ela aparece no fundo e no cartão do app. Apague o arquivo para voltar à arte padrão.\r\n"), 0o644)
+			"A imagem aparece no fundo e no cartão do app.\r\n\r\n"+
+			"VÍDEOS: netflix.mp4, disney.webm... tocam sem som no fundo quando o app está selecionado.\r\n"+
+			"  fundo.mp4 toca quando nenhum app está selecionado. Use vídeos curtos (10 a 60 s), 720p ou 1080p,\r\n"+
+			"  em H.264 (mp4): é o formato que a placa de vídeo do notebook toca sem esforço.\r\n\r\n"+
+			"Apague o arquivo para voltar à arte padrão.\r\n"), 0o644)
 	}
 }
 

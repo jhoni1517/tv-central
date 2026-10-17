@@ -98,8 +98,8 @@ function titulo(t) {
   h.classList.remove('troca'); void h.offsetWidth; h.classList.add('troca');
 }
 
-// Fundo com a arte do app: espera um instante para não carregar imagem a cada seta rápida
-let arteAtual = null, arteVez = 0;
+// Fundo com a arte (ou o vídeo) do app: espera um instante para não carregar a cada seta rápida
+let arteAtual = null, arteVez = 0, videosFundo = new Set(), videosLigados = true;
 function trocarArte(id) {
   clearTimeout(trocarArte.t);
   trocarArte.t = setTimeout(() => {
@@ -110,8 +110,37 @@ function trocarArte(id) {
     if (id) nova.style.backgroundImage = `url("/capa/${id}")`;
     nova.classList.toggle('ativa', !!id);
     velha.classList.remove('ativa');
+    tocarVideoFundo(id || 'fundo');
   }, 140);
 }
+
+// Vídeo só toca com a tela inicial na frente: com um app aberto ele para (economiza a máquina)
+const videoFundo = () => $('#video-fundo');
+function tocarVideoFundo(id) {
+  const v = videoFundo();
+  clearTimeout(tocarVideoFundo.t);
+  if (!videosLigados || !videosFundo.has(id)) { pararVideo(v); return; }
+  tocarVideoFundo.t = setTimeout(() => {
+    const src = `/video/${id}`;
+    if (v.dataset.id !== id) {
+      v.classList.remove('ativa');
+      v.dataset.id = id;
+      v.src = src;
+    }
+    if (document.hasFocus() && !document.hidden) v.play().catch(() => {});
+  }, 250); // um pouco depois da imagem: troca de vídeo pesa mais
+}
+function pararVideo(v) {
+  v.classList.remove('ativa');
+  if (v.id === 'video-fundo') $('#fundo').classList.remove('com-video');
+  v.pause();
+  if (v.dataset.id) { delete v.dataset.id; v.removeAttribute('src'); v.load(); } // libera o decodificador
+}
+videoFundo().addEventListener('playing', e => { e.target.classList.add('ativa'); $('#fundo').classList.add('com-video'); });
+videoFundo().addEventListener('error', e => pararVideo(e.target));
+window.addEventListener('blur', () => videoFundo().pause());
+document.addEventListener('visibilitychange', () => { if (document.hidden) videoFundo().pause(); else if (videoFundo().dataset.id) videoFundo().play().catch(() => {}); });
+window.addEventListener('focus', () => { if (videoFundo().dataset.id) videoFundo().play().catch(() => {}); });
 
 function mover(dl, dc) {
   if (dl) {
@@ -227,6 +256,12 @@ async function estado() {
     Som.ligado = s.sons !== false;
     if (typeof s.protetorMin === 'number') protetorMin = s.protetorMin;
     mostrarTimer(s.timer || 0);
+    videosLigados = s.videosFundo !== false;
+    const novos = (s.videos || []).join(',');
+    if (novos !== estado.videos) {
+      estado.videos = novos; videosFundo = new Set(s.videos || []);
+      tocarVideoFundo(arteAtual || 'fundo'); // vídeo novo na pasta já aparece
+    }
     if (s.novidade && !sessionStorage.getItem('aviso-' + s.versao)) { sessionStorage.setItem('aviso-' + s.versao, '1'); aviso(s.novidade, 8000); }
     if (s.atualizacao && s.atualizacao !== estado.ultimoStatus) aviso(s.atualizacao);
     estado.ultimoStatus = s.atualizacao;
@@ -268,12 +303,15 @@ const Som = {
 };
 
 // ---------- Desligar em… (timer) ----------
+$('#prot-video').addEventListener('playing', e => e.target.classList.add('ativa'));
+$('#prot-video').addEventListener('error', e => pararVideo(e.target));
+
 const OPCOES_TIMER = [0, 30, 60, 90, 120];
 let timerRestante = 0;
 function mostrarTimer(seg) {
   timerRestante = seg;
   const min = Math.ceil(seg / 60);
-  $('#timer-txt').textContent = seg ? `em ${min} min` : 'desativado';
+  $('#timer-txt').textContent = seg ? `desliga em ${min} min` : 'desativado';
   $('#timer-chip').textContent = seg ? `☾ ${min} min` : '';
   mostrar('#timer-chip', !!seg);
   if (seg && seg <= 60 && !mostrarTimer.avisou) { mostrarTimer.avisou = true; aviso('O computador vai desligar em 1 minuto'); }
@@ -294,6 +332,7 @@ let protetorMin = 10, ultimoUso = Date.now(), protetorAtivo = false, protetorVez
 function usou() { ultimoUso = Date.now(); }
 function ligarProtetor() {
   protetorAtivo = true;
+  pararVideo(videoFundo());
   mostrar('#protetor', true);
   trocarProtetor();
   ligarProtetor.t = setInterval(trocarProtetor, 15000);
@@ -301,13 +340,19 @@ function ligarProtetor() {
 function desligarProtetor() {
   protetorAtivo = false;
   clearInterval(ligarProtetor.t);
+  pararVideo($('#prot-video'));
   mostrar('#protetor', false);
+  tocarVideoFundo(arteAtual || 'fundo');
   usou();
 }
 function trocarProtetor() {
   const ids = linhas[0].map(b => b.dataset.id);
   if (!ids.length) return;
   const id = ids[protetorIdx++ % ids.length];
+  const pv = $('#prot-video');
+  if (videosLigados && videosFundo.has(id)) {
+    pv.classList.remove('ativa'); pv.src = `/video/${id}`; pv.play().catch(() => {});
+  } else pararVideo(pv);
   const camadas = [$('#prot-a'), $('#prot-b')];
   const nova = camadas[protetorVez = 1 - protetorVez];
   nova.style.backgroundImage = `url("/capa/${id}")`;
