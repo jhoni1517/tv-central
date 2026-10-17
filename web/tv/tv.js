@@ -37,6 +37,9 @@ function montarApps(apps) {
     b.dataset.nome = a.Nome;
     b.style.setProperty('--c1', a.Cor);
     b.style.setProperty('--c2', a.Cor2 || '#111');
+    b.style.setProperty('--capa', `url("/capa/${a.ID}?p=1")`);
+    b.dataset.desc = a.Descricao || '';
+    new Image().src = `/capa/${a.ID}`; // já deixa a arte grande carregada
     const n = document.createElement('span');
     n.className = 'nome';
     n.textContent = a.Nome;
@@ -62,7 +65,7 @@ function focar(peloMouse) {
   // Rola a linha para o cartão focado ficar visível
   const fila = el.parentElement;
   const visivel = innerWidth - fila.parentElement.getBoundingClientRect().left - innerWidth * 0.09;
-  const ini = el.offsetLeft - fila.offsetLeft, fim = ini + el.offsetWidth;
+  const ini = el.offsetLeft, fim = ini + el.offsetWidth; // a fila tem position: relative, então offsetLeft é dentro dela
   let x = fila._x || 0;
   if (!peloMouse) { // com mouse a linha não pula: o cartão já está embaixo do cursor
     if (fim - x > visivel) x = fim - visivel;
@@ -74,14 +77,40 @@ function focar(peloMouse) {
   if (el.dataset.id) {
     raiz.setProperty('--cor', el.style.getPropertyValue('--c1'));
     raiz.setProperty('--cor2', el.style.getPropertyValue('--c2'));
-    $('#titulo').textContent = el.dataset.nome;
-    $('#subtitulo').textContent = 'Pressione OK para abrir';
+    titulo(el.dataset.nome);
+    $('#subtitulo').textContent = el.dataset.desc || 'Pressione OK para abrir';
+    $('#dica').classList.add('ver');
+    trocarArte(el.dataset.id);
   } else {
     raiz.setProperty('--cor', '#3a6df0');
     raiz.setProperty('--cor2', '#0b1430');
-    $('#titulo').textContent = saudacao();
+    titulo(saudacao());
     $('#subtitulo').textContent = el.querySelector('span:last-child').firstChild.textContent.trim();
+    $('#dica').classList.add('ver');
+    trocarArte(null);
   }
+}
+
+function titulo(t) {
+  const h = $('#titulo');
+  if (h.textContent === t) return;
+  h.textContent = t;
+  h.classList.remove('troca'); void h.offsetWidth; h.classList.add('troca');
+}
+
+// Fundo com a arte do app: espera um instante para não carregar imagem a cada seta rápida
+let arteAtual = null, arteVez = 0;
+function trocarArte(id) {
+  clearTimeout(trocarArte.t);
+  trocarArte.t = setTimeout(() => {
+    if (id === arteAtual) return;
+    arteAtual = id;
+    const camadas = [$('#arte-a'), $('#arte-b')];
+    const nova = camadas[arteVez = 1 - arteVez], velha = camadas[1 - arteVez];
+    if (id) nova.style.backgroundImage = `url("/capa/${id}")`;
+    nova.classList.toggle('ativa', !!id);
+    velha.classList.remove('ativa');
+  }, 140);
 }
 
 function mover(dl, dc) {

@@ -8,17 +8,22 @@
   font-family: "Segoe UI Variable Display", "Segoe UI", system-ui, sans-serif;
 }
 * { box-sizing: border-box; }
-html, body { margin: 0; height: 100%; overflow: hidden; background: var(--fundo); color: var(--texto); cursor: none; user-select: none; }
+html { background: var(--fundo); }
+/* body sem fundo: senão ele cobre o #fundo (que fica atrás, com z-index negativo) */
+html, body { margin: 0; height: 100%; overflow: hidden; color: var(--texto); cursor: none; user-select: none; }
 button { font: inherit; color: inherit; border: 0; background: none; cursor: none; }
 
 #fundo {
-  position: fixed; inset: -10%; z-index: -1;
+  position: fixed; inset: 0; z-index: -1; overflow: hidden;
   background:
     radial-gradient(60% 55% at 78% 18%, color-mix(in srgb, var(--cor) 42%, transparent), transparent 70%),
     radial-gradient(50% 50% at 10% 90%, color-mix(in srgb, var(--cor2) 80%, transparent), transparent 70%),
     var(--fundo);
-  /* Sem animação contínua: em placa de vídeo fraca isso trava a tela inteira */
 }
+/* Arte do app em foco: duas camadas que se revezam (troca suave só com opacidade) */
+.arte { position: absolute; inset: 0; background: center right / cover no-repeat; opacity: 0; transition: opacity .55s ease; }
+.arte.ativa { opacity: 1; }
+#fundo::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, transparent 40%, rgba(6,7,11,.85) 78%); }
 
 header { display: flex; justify-content: space-between; align-items: center; padding: 2.6vw 4vw 0; }
 .marca { display: flex; align-items: center; gap: .7vw; font-weight: 600; font-size: 1.25vw; letter-spacing: .04em; color: var(--suave); }
@@ -30,26 +35,33 @@ header { display: flex; justify-content: space-between; align-items: center; pad
 main { padding: 0 4vw; }
 .destaque { height: 15vw; display: flex; flex-direction: column; justify-content: flex-end; }
 .destaque h1 { margin: 0; font-size: 4.6vw; font-weight: 700; letter-spacing: -.03em; line-height: 1; }
-.destaque p { margin: .9vw 0 0; font-size: 1.4vw; color: var(--suave); }
+.destaque p { margin: .9vw 0 0; font-size: 1.4vw; color: var(--suave); max-width: 45vw; }
+.destaque h1, .destaque p { text-shadow: 0 .1vw .5vw rgba(0,0,0,.45); }
+.dica { margin-top: 1.1vw; font-size: 1vw; color: var(--suave); opacity: 0; transform: translateY(.4vw); transition: opacity .25s, transform .25s; }
+.dica.ver { opacity: 1; transform: none; }
+.destaque h1.troca { animation: trocaTitulo .32s ease-out; }
+@keyframes trocaTitulo { from { opacity: 0; transform: translateX(-1vw); } to { opacity: 1; transform: none; } }
 
 .linha { margin-top: 2.6vw; }
 .linha h2 { margin: 0 0 1vw; font-size: 1.15vw; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: var(--suave); }
-.cartoes { display: flex; gap: 1.6vw; padding: 1.2vw 0; transition: transform .2s ease-out; }
+.cartoes { position: relative; display: flex; gap: 1.6vw; padding: 1.2vw 0; transition: transform .2s ease-out; }
 
 .cartao {
   position: relative; flex: 0 0 auto; width: 17vw; aspect-ratio: 16 / 9; border-radius: var(--raio);
   display: flex; align-items: flex-end; padding: 1.2vw 1.4vw; overflow: hidden;
-  background: linear-gradient(135deg, var(--c1, #333) 0%, var(--c2, #111) 100%);
+  background: var(--capa, none) center / cover no-repeat, linear-gradient(135deg, var(--c1, #333) 0%, var(--c2, #111) 100%);
+  box-shadow: inset 0 -.3vw 0 var(--c1, transparent);
   transition: transform .14s ease-out;
   outline: .25vw solid transparent; outline-offset: .35vw;
 }
 /* Escurece os cartões sem foco com uma camada (opacidade é barata; filter e sombra animada não) */
 .cartao::after { content: ""; position: absolute; inset: 0; background: rgba(0,0,0,.28); transition: opacity .14s; }
+.cartao::before { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, transparent 35%, rgba(0,0,0,.55)); }
 .cartao .nome { position: relative; z-index: 1; font-size: 1.9vw; font-weight: 800; letter-spacing: -.02em; text-shadow: 0 .2vw 1vw rgba(0,0,0,.35); }
 .cartao.foco { transform: scale(1.1); z-index: 2; outline-color: #fff; }
 .cartao.foco::after { opacity: 0; }
 
-.pequenos .cartao { width: 11vw; aspect-ratio: auto; height: 6vw; align-items: center; gap: .8vw; font-size: 1.1vw; font-weight: 600;
+.pequenos .cartao { box-shadow: none; width: 11vw; aspect-ratio: auto; height: 6vw; align-items: center; gap: .8vw; font-size: 1.1vw; font-weight: 600;
   background: #1a1c24; --c1: #8aa4ff; }
 .pequenos .cartao .icone { font-size: 1.7vw; }
 

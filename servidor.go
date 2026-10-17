@@ -64,6 +64,7 @@ func (s *Servidor) Rodar(l net.Listener) error {
 		responder(w, map[string]any{"ok": true, "versao": versao})
 	}))
 	mux.HandleFunc("GET /api/apps", s.autenticado(s.listarApps))
+	mux.HandleFunc("GET /capa/{id}", s.capa)
 	mux.HandleFunc("GET /api/diagnostico", s.autenticado(s.diagnostico))
 	mux.HandleFunc("GET /ws", s.autenticado(s.controle))
 
@@ -162,13 +163,13 @@ func (s *Servidor) parear(w http.ResponseWriter, r *http.Request) {
 }
 
 type appPublico struct {
-	ID, Nome, Cor, Cor2 string
+	ID, Nome, Cor, Cor2, Descricao string
 }
 
 func (s *Servidor) appsPublicos() []appPublico {
 	l := make([]appPublico, 0, len(s.cfg.apps))
 	for _, a := range s.cfg.apps {
-		l = append(l, appPublico{a.ID, a.Nome, a.Cor, a.Cor2})
+		l = append(l, appPublico{a.ID, a.Nome, a.Cor, a.Cor2, a.Descricao})
 	}
 	return l
 }
@@ -204,6 +205,49 @@ func ultimasLinhas(arq string, n int) []string {
 		linhas = linhas[len(linhas)-n:]
 	}
 	return linhas
+}
+
+// capa: imagem de fundo do app. Uma imagem sua em capas\<id>.jpg (ou .png/.webp) tem prioridade;
+// senão usa a arte própria que vem no programa. ?p=1 devolve a versão pequena (cartão).
+func (s *Servidor) capa(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("id")
+	if !idValido(id) {
+		http.NotFound(w, r)
+		return
+	}
+	w.Header().Set("Cache-Control", "no-cache")
+	for _, ext := range []string{".jpg", ".jpeg", ".png", ".webp"} {
+		arq := filepath.Join(s.ger.dados, "capas", id+ext)
+		if f, err := os.Open(arq); err == nil {
+			defer f.Close()
+			if fi, err := f.Stat(); err == nil && fi.Size() < 15<<20 {
+				http.ServeContent(w, r, arq, fi.ModTime(), f)
+				return
+			}
+		}
+	}
+	sufixo := ""
+	if r.URL.Query().Get("p") == "1" {
+		sufixo = "-p"
+	}
+	b, err := arquivosWeb.ReadFile("web/tv/arte/" + id + sufixo + ".jpg")
+	if err != nil {
+		b, _ = arquivosWeb.ReadFile("web/tv/arte/padrao" + sufixo + ".jpg")
+	}
+	w.Header().Set("Content-Type", "image/jpeg")
+	_, _ = w.Write(b)
+}
+
+func idValido(id string) bool {
+	if id == "" || len(id) > 40 {
+		return false
+	}
+	for _, c := range id {
+		if !(c >= 'a' && c <= 'z' || c >= '0' && c <= '9' || c == '-' || c == '_') {
+			return false
+		}
+	}
+	return true
 }
 
 func (s *Servidor) acharApp(id string) (App, bool) {

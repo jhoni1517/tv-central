@@ -16,6 +16,7 @@ type App struct {
 	Args      []string `json:"args,omitempty"`
 	Cor       string   `json:"cor"`
 	Cor2      string   `json:"cor2,omitempty"`
+	Descricao string   `json:"descricao,omitempty"` // frase que aparece na tela inicial
 	UserAgent string   `json:"userAgent,omitempty"`
 	Perfil    string   `json:"perfil,omitempty"` // perfil do navegador (logins ficam salvos nele)
 	Setas     *bool    `json:"setas,omitempty"`  // navegação por setas injetada no site
@@ -35,13 +36,13 @@ func falso() *bool { b := false; return &b }
 const uaSmartTV = "Mozilla/5.0 (SMART-TV; Linux; Tizen 6.0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/94.0.4606.31 TV Safari/537.36"
 
 var appsPadrao = []App{
-	{ID: "netflix", Nome: "Netflix", Tipo: "web", Destino: "https://www.netflix.com/browse", Cor: "#E50914", Cor2: "#3d0205"},
-	{ID: "hbomax", Nome: "HBO Max", Tipo: "web", Destino: "https://play.hbomax.com", Cor: "#7B2FF7", Cor2: "#1b0a3d"},
-	{ID: "disney", Nome: "Disney+", Tipo: "web", Destino: "https://www.disneyplus.com", Cor: "#0063E5", Cor2: "#0b1a4a"},
-	{ID: "appletv", Nome: "Apple TV", Tipo: "web", Destino: "https://tv.apple.com", Cor: "#5c5c66", Cor2: "#111114"},
-	{ID: "youtube", Nome: "YouTube", Tipo: "web", Destino: "https://www.youtube.com/tv", Cor: "#FF0033", Cor2: "#7a0019", UserAgent: uaSmartTV, Perfil: "youtube", Setas: falso()},
-	{ID: "prime", Nome: "Prime Video", Tipo: "web", Destino: "https://www.primevideo.com", Cor: "#1A98FF", Cor2: "#0a2a4a"},
-	{ID: "globoplay", Nome: "Globoplay", Tipo: "web", Destino: "https://globoplay.globo.com", Cor: "#F25C2B", Cor2: "#4a1406"},
+	{ID: "netflix", Nome: "Netflix", Tipo: "web", Destino: "https://www.netflix.com/browse", Cor: "#E50914", Cor2: "#3d0205", Descricao: "Séries, filmes e documentários"},
+	{ID: "hbomax", Nome: "HBO Max", Tipo: "web", Destino: "https://play.hbomax.com", Cor: "#7B2FF7", Cor2: "#1b0a3d", Descricao: "Séries e filmes da HBO e da Warner"},
+	{ID: "disney", Nome: "Disney+", Tipo: "web", Destino: "https://www.disneyplus.com", Cor: "#0063E5", Cor2: "#0b1a4a", Descricao: "Disney, Pixar, Marvel, Star Wars e National Geographic"},
+	{ID: "appletv", Nome: "Apple TV", Tipo: "web", Destino: "https://tv.apple.com", Cor: "#5c5c66", Cor2: "#111114", Descricao: "Séries e filmes originais da Apple"},
+	{ID: "youtube", Nome: "YouTube", Tipo: "web", Destino: "https://www.youtube.com/tv", Cor: "#FF0033", Cor2: "#7a0019", UserAgent: uaSmartTV, Perfil: "youtube", Setas: falso(), Descricao: "Vídeos, música e canais, com tela de TV"},
+	{ID: "prime", Nome: "Prime Video", Tipo: "web", Destino: "https://www.primevideo.com", Cor: "#1A98FF", Cor2: "#0a2a4a", Descricao: "Filmes, séries e esportes da Amazon"},
+	{ID: "globoplay", Nome: "Globoplay", Tipo: "web", Destino: "https://globoplay.globo.com", Cor: "#F25C2B", Cor2: "#4a1406", Descricao: "Novelas, séries e a Globo ao vivo"},
 }
 
 type Config struct {

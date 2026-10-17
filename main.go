@@ -91,6 +91,7 @@ func rodar(op Opcoes) {
 	}
 	log.Printf("TV Central %s iniciando (dados em %s)", versao, dados)
 
+	prepararCapas(dados)
 	cfg, err := carregarConfig(dados)
 	if err != nil {
 		log.Printf("config: %v (usando padrão)", err)
@@ -137,5 +138,18 @@ func rodar(op Opcoes) {
 	if err := srv.Rodar(ouvinte); err != nil {
 		log.Printf("servidor parou: %v", err)
 		os.Exit(1)
+	}
+}
+
+// prepararCapas cria a pasta onde a pessoa pode pôr imagens próprias para os apps.
+func prepararCapas(dados string) {
+	pasta := filepath.Join(dados, "capas")
+	_ = os.MkdirAll(pasta, 0o755)
+	leia := filepath.Join(pasta, "LEIA-ME.txt")
+	if _, err := os.Stat(leia); err != nil {
+		_ = os.WriteFile(leia, []byte("Coloque aqui uma imagem para cada app, com o id do app no nome:\r\n"+
+			"  netflix.jpg, hbomax.jpg, disney.jpg, appletv.jpg, youtube.jpg, prime.jpg, globoplay.jpg\r\n"+
+			"Pode ser .jpg, .png ou .webp (de preferência 1600x900, mais escura à esquerda).\r\n"+
+			"Ela aparece no fundo e no cartão do app. Apague o arquivo para voltar à arte padrão.\r\n"), 0o644)
 	}
 }

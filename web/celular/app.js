@@ -179,6 +179,7 @@ async function carregarApps() {
       b.textContent = a.Nome;
       b.style.setProperty('--c1', a.Cor);
       b.style.setProperty('--c2', a.Cor2 || '#111');
+      b.style.background = `linear-gradient(180deg, transparent 40%, rgba(0,0,0,.6)), url("/capa/${a.ID}?p=1") center / cover, linear-gradient(135deg, ${a.Cor}, ${a.Cor2 || '#111'})`;
       b.onclick = () => { enviar({ t: 'abrir', k: a.ID }); vibrar(20); trocarAba('controle'); };
       lista.append(b);
     }
