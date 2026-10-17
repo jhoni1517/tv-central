@@ -17,14 +17,12 @@ button { font: inherit; color: inherit; border: 0; background: none; cursor: non
     radial-gradient(60% 55% at 78% 18%, color-mix(in srgb, var(--cor) 42%, transparent), transparent 70%),
     radial-gradient(50% 50% at 10% 90%, color-mix(in srgb, var(--cor2) 80%, transparent), transparent 70%),
     var(--fundo);
-  transition: background .6s ease;
-  animation: respira 14s ease-in-out infinite alternate;
+  /* Sem animação contínua: em placa de vídeo fraca isso trava a tela inteira */
 }
-@keyframes respira { from { transform: scale(1) translate(0, 0); } to { transform: scale(1.06) translate(-1%, 1%); } }
 
 header { display: flex; justify-content: space-between; align-items: center; padding: 2.6vw 4vw 0; }
 .marca { display: flex; align-items: center; gap: .7vw; font-weight: 600; font-size: 1.25vw; letter-spacing: .04em; color: var(--suave); }
-.ponto { width: .8vw; height: .8vw; border-radius: 50%; background: var(--cor); box-shadow: 0 0 1.2vw var(--cor); transition: background .4s, box-shadow .4s; }
+.ponto { width: .8vw; height: .8vw; border-radius: 50%; background: var(--cor); }
 .hora { display: flex; align-items: baseline; gap: 1.2vw; }
 #relogio { font-size: 3.2vw; font-weight: 300; letter-spacing: -.02em; }
 #data { font-size: 1.15vw; color: var(--suave); }
@@ -36,31 +34,28 @@ main { padding: 0 4vw; }
 
 .linha { margin-top: 2.6vw; }
 .linha h2 { margin: 0 0 1vw; font-size: 1.15vw; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: var(--suave); }
-.cartoes { display: flex; gap: 1.6vw; padding: 1.2vw 0; transition: transform .35s cubic-bezier(.2,.8,.2,1); }
+.cartoes { display: flex; gap: 1.6vw; padding: 1.2vw 0; transition: transform .2s ease-out; }
 
 .cartao {
   position: relative; flex: 0 0 auto; width: 17vw; aspect-ratio: 16 / 9; border-radius: var(--raio);
   display: flex; align-items: flex-end; padding: 1.2vw 1.4vw; overflow: hidden;
   background: linear-gradient(135deg, var(--c1, #333) 0%, var(--c2, #111) 100%);
-  box-shadow: 0 .8vw 2vw rgba(0, 0, 0, .45);
-  transition: transform .22s cubic-bezier(.2, .8, .2, 1.2), box-shadow .22s, outline-color .22s, filter .22s;
+  transition: transform .14s ease-out;
   outline: .25vw solid transparent; outline-offset: .35vw;
-  filter: saturate(.85) brightness(.82);
 }
-.cartao::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(255,255,255,.14), transparent 45%); }
+/* Escurece os cartões sem foco com uma camada (opacidade é barata; filter e sombra animada não) */
+.cartao::after { content: ""; position: absolute; inset: 0; background: rgba(0,0,0,.28); transition: opacity .14s; }
 .cartao .nome { position: relative; z-index: 1; font-size: 1.9vw; font-weight: 800; letter-spacing: -.02em; text-shadow: 0 .2vw 1vw rgba(0,0,0,.35); }
-.cartao.foco {
-  transform: scale(1.1); z-index: 2; filter: none;
-  outline-color: #fff; box-shadow: 0 1.6vw 3.6vw rgba(0, 0, 0, .6), 0 0 3vw color-mix(in srgb, var(--c1) 55%, transparent);
-}
+.cartao.foco { transform: scale(1.1); z-index: 2; outline-color: #fff; }
+.cartao.foco::after { opacity: 0; }
 
 .pequenos .cartao { width: 11vw; aspect-ratio: auto; height: 6vw; align-items: center; gap: .8vw; font-size: 1.1vw; font-weight: 600;
-  background: rgba(255, 255, 255, .07); backdrop-filter: blur(12px); --c1: #8aa4ff; }
+  background: #1a1c24; --c1: #8aa4ff; }
 .pequenos .cartao .icone { font-size: 1.7vw; }
 
 .cartao-qr {
   position: fixed; right: 4vw; bottom: 5.5vw; display: flex; gap: 1.4vw; align-items: center; max-width: 30vw;
-  padding: 1.2vw; border-radius: var(--raio); background: rgba(255, 255, 255, .08); backdrop-filter: blur(18px);
+  padding: 1.2vw; border-radius: var(--raio); background: #181a22;
   border: 1px solid rgba(255, 255, 255, .1); transition: opacity .3s, transform .3s;
 }
 .cartao-qr img { width: 8.5vw; height: 8.5vw; border-radius: .6vw; background: #fff; padding: .4vw; }
@@ -71,18 +66,17 @@ main { padding: 0 4vw; }
 footer { position: fixed; left: 4vw; bottom: 2vw; display: flex; gap: 2.2vw; font-size: .95vw; color: var(--suave); }
 kbd { font-family: inherit; padding: .15vw .5vw; border-radius: .35vw; background: rgba(255,255,255,.1); color: #fff; }
 
-.sobre { position: fixed; inset: 0; display: grid; place-items: center; background: rgba(4, 5, 8, .78); backdrop-filter: blur(10px); z-index: 10; transition: opacity .25s; }
+.sobre { position: fixed; inset: 0; display: grid; place-items: center; background: rgba(4, 5, 8, .92); z-index: 10; }
 .caixa { text-align: center; }
 .caixa p { margin: 0 0 1.4vw; font-size: 1.8vw; }
 .codigo { font-size: 8vw; font-weight: 800; letter-spacing: .25em; padding-left: .25em; }
 .caixa small { font-size: 1.1vw; color: var(--suave); }
 .botoes { display: flex; gap: 1.6vw; justify-content: center; }
-.botao { padding: 1vw 3vw; border-radius: 99vw; font-size: 1.4vw; font-weight: 600; background: rgba(255,255,255,.1); outline: .2vw solid transparent; transition: transform .15s, background .15s; }
+.botao { padding: 1vw 3vw; border-radius: 99vw; font-size: 1.4vw; font-weight: 600; background: rgba(255,255,255,.1); outline: .2vw solid transparent; }
 .botao.foco { background: #fff; color: #000; transform: scale(1.08); }
 
-.abrindo { background: radial-gradient(circle at 50% 50%, color-mix(in srgb, var(--cor) 55%, #000), #000 75%); }
+.abrindo { background: #000; }
 .giro { width: 4vw; height: 4vw; margin: 0 auto 1.6vw; border-radius: 50%; border: .4vw solid rgba(255,255,255,.2); border-top-color: #fff; animation: gira .8s linear infinite; }
 @keyframes gira { to { transform: rotate(360deg); } }
 
-.oculto { opacity: 0; pointer-events: none; }
-.cartao-qr.oculto { transform: translateY(1vw); }
+.oculto { display: none !important; }

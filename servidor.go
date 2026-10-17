@@ -227,6 +227,7 @@ type Msg struct {
 	Enter bool   `json:"enter"` // texto: apertar Enter depois
 	DX    int    `json:"dx"`
 	DY    int    `json:"dy"`
+	ID    int64  `json:"id"` // ping: devolvido no pong para medir a latência
 }
 
 func (s *Servidor) controle(w http.ResponseWriter, r *http.Request) {
@@ -241,11 +242,21 @@ func (s *Servidor) controle(w http.ResponseWriter, r *http.Request) {
 		if err := c.ReadJSON(&m); err != nil {
 			return
 		}
-		if err := s.executar(m); err != nil {
-			log.Printf("controle: %s %s: %v", m.T, m.K, err)
-			_ = c.WriteJSON(map[string]string{"erro": err.Error()})
-		} else if m.T == "ping" {
-			_ = c.WriteJSON(map[string]string{"t": "pong", "atual": s.ger.Atual()})
+		switch m.T {
+		case "ping":
+			_ = c.WriteJSON(map[string]any{"t": "pong", "id": m.ID, "atual": s.ger.Atual(), "versao": versao})
+		case "abrir", "inicio", "sistema":
+			// Abrir/fechar app demora: roda à parte para as próximas teclas não ficarem na fila.
+			go func(m Msg) {
+				if err := s.executar(m); err != nil {
+					log.Printf("controle: %s %s: %v", m.T, m.K, err)
+				}
+			}(m)
+		default:
+			if err := s.executar(m); err != nil {
+				log.Printf("controle: %s %s: %v", m.T, m.K, err)
+				_ = c.WriteJSON(map[string]string{"erro": err.Error()})
+			}
 		}
 	}
 }

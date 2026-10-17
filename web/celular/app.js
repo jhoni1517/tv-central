@@ -46,7 +46,11 @@ function conectar() {
     setTimeout(conectar, espera);
     espera = Math.min(espera * 2, 5000);
   };
-  ws.onmessage = ev => { const m = JSON.parse(ev.data); if (m.erro) console.warn(m.erro); };
+  ws.onmessage = ev => {
+    const m = JSON.parse(ev.data);
+    if (m.erro) console.warn(m.erro);
+    if (m.t === 'pong' && m.id) mostrarLatencia(Date.now() - m.id);
+  };
 }
 
 function enviar(m) {
@@ -55,7 +59,13 @@ function enviar(m) {
   else if (fila.length < 20) fila.push(s);
 }
 
-setInterval(() => enviar({ t: 'ping' }), 20000);
+// Mede a latência (tempo de ida e volta até o PC) a cada 3 s com a tela ligada
+function mostrarLatencia(ms) {
+  const el = $('#latencia');
+  el.textContent = ms + ' ms';
+  el.className = ms < 80 ? 'boa' : ms < 250 ? 'media' : 'ruim';
+}
+setInterval(() => { if (!document.hidden && ws && ws.readyState === 1) ws.send(JSON.stringify({ t: 'ping', id: Date.now() })); }, 3000);
 document.addEventListener('visibilitychange', () => {
   if (!document.hidden && token && (!ws || ws.readyState > 1)) conectar();
 });

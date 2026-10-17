@@ -17,8 +17,7 @@
   css.textContent = `
     .${CLASSE}{outline:4px solid #fff!important;outline-offset:2px!important;
       box-shadow:0 0 0 9px rgba(64,156,255,.6),0 10px 40px rgba(0,0,0,.6)!important;
-      border-radius:8px;transition:outline-offset .12s,box-shadow .12s;z-index:2147483000}
-    html{scroll-behavior:smooth}`;
+      border-radius:8px;z-index:2147483000}`;
   const colocarCss = () => { if (!css.isConnected) (document.head || document.documentElement).appendChild(css); };
   colocarCss();
   document.addEventListener('DOMContentLoaded', colocarCss);
@@ -33,57 +32,66 @@
     return null;
   }
 
-  // Retângulo útil do elemento, ou null se não dá para usar (invisível, coberto, minúsculo).
-  function retangulo(el, margem) {
-    const r = el.getBoundingClientRect();
-    if (r.width < 6 || r.height < 6) return null;
-    if (r.bottom < -margem || r.top > innerHeight + margem || r.right < -margem || r.left > innerWidth + margem) return null;
-    const s = getComputedStyle(el);
-    if (s.visibility === 'hidden' || s.display === 'none' || s.pointerEvents === 'none' || +s.opacity === 0) return null;
-    if (el.disabled || el.getAttribute('aria-hidden') === 'true') return null;
-    const dentro = r.top >= 0 && r.left >= 0 && r.bottom <= innerHeight && r.right <= innerWidth;
-    if (dentro) {
-      const topo = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
-      if (topo && topo !== el && !el.contains(topo) && !topo.contains(el) && topo.closest(SELETOR) !== el) return null;
-    }
-    return r;
+  // Rápido: só lê o tamanho (getBoundingClientRect). As checagens caras ficam para os poucos finalistas.
+  function perto(r, margem) {
+    return r.width >= 6 && r.height >= 6 && r.bottom > -margem && r.top < innerHeight + margem &&
+      r.right > -margem && r.left < innerWidth + margem;
   }
 
-  function candidatos(margem) {
-    const lista = [];
-    for (const el of document.querySelectorAll(SELETOR)) {
-      if (el === atual) continue;
-      const r = retangulo(el, margem);
-      if (r) lista.push({ el, r });
+  // Caro: estilo e se está coberto por outra coisa. Roda só nos melhores colocados.
+  function utilizavel(el, r) {
+    if (el.disabled || el.getAttribute('aria-hidden') === 'true') return false;
+    const s = getComputedStyle(el);
+    if (s.visibility === 'hidden' || s.display === 'none' || s.pointerEvents === 'none' || +s.opacity === 0) return false;
+    if (r.top >= 0 && r.left >= 0 && r.bottom <= innerHeight && r.right <= innerWidth) {
+      const topo = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
+      if (topo && topo !== el && !el.contains(topo) && !topo.contains(el) && topo.closest(SELETOR) !== el) return false;
     }
-    // Se um item está dentro de outro com quase o mesmo tamanho, fica só o de fora.
-    return lista.filter(a => !lista.some(b => b !== a && b.el.contains(a.el) &&
-      Math.abs(b.r.width - a.r.width) < 24 && Math.abs(b.r.height - a.r.height) < 24));
+    return true;
   }
 
   function centro(r) { return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; }
-
-  function melhor(dir, margem) {
-    const de = atual.getBoundingClientRect(), c = centro(de);
-    let escolhido = null, pontos = Infinity;
-    for (const { el, r } of candidatos(margem)) {
-      if (el.contains(atual) || atual.contains(el)) continue;
-      const p = centro(r);
-      let frente, lado;
-      if (dir === 'direita') { frente = r.left - de.right; if (p.x <= c.x + 4) continue; lado = sobra(r.top, r.bottom, de.top, de.bottom, p.y, c.y); }
-      if (dir === 'esquerda') { frente = de.left - r.right; if (p.x >= c.x - 4) continue; lado = sobra(r.top, r.bottom, de.top, de.bottom, p.y, c.y); }
-      if (dir === 'baixo') { frente = r.top - de.bottom; if (p.y <= c.y + 4) continue; lado = sobra(r.left, r.right, de.left, de.right, p.x, c.x); }
-      if (dir === 'cima') { frente = de.top - r.bottom; if (p.y >= c.y - 4) continue; lado = sobra(r.left, r.right, de.left, de.right, p.x, c.x); }
-      const valor = Math.max(frente, -20) + lado * (dir === 'direita' || dir === 'esquerda' ? 4 : 1.5);
-      if (valor < pontos) { pontos = valor; escolhido = el; }
-    }
-    return escolhido;
-  }
 
   // Distância lateral: zero se os dois se sobrepõem nesse eixo.
   function sobra(a1, a2, b1, b2, pa, pb) {
     if (a1 < b2 && a2 > b1) return 0;
     return Math.abs(pa - pb);
+  }
+
+  // Se o escolhido está dentro de outro clicável quase do mesmo tamanho, usa o de fora.
+  function externo(el) {
+    const r = el.getBoundingClientRect();
+    let p = el.parentElement && el.parentElement.closest(SELETOR);
+    while (p) {
+      const q = p.getBoundingClientRect();
+      if (Math.abs(q.width - r.width) > 24 || Math.abs(q.height - r.height) > 24) break;
+      el = p;
+      p = p.parentElement && p.parentElement.closest(SELETOR);
+    }
+    return el;
+  }
+
+  function melhor(dir) {
+    const de = atual.getBoundingClientRect(), c = centro(de), horiz = dir === 'direita' || dir === 'esquerda';
+    const lista = [];
+    for (const el of document.querySelectorAll(SELETOR)) {
+      if (el === atual) continue;
+      const r = el.getBoundingClientRect();
+      if (!perto(r, innerHeight)) continue;
+      const p = centro(r);
+      let frente, lado;
+      if (dir === 'direita') { if (p.x <= c.x + 4) continue; frente = r.left - de.right; lado = sobra(r.top, r.bottom, de.top, de.bottom, p.y, c.y); }
+      else if (dir === 'esquerda') { if (p.x >= c.x - 4) continue; frente = de.left - r.right; lado = sobra(r.top, r.bottom, de.top, de.bottom, p.y, c.y); }
+      else if (dir === 'baixo') { if (p.y <= c.y + 4) continue; frente = r.top - de.bottom; lado = sobra(r.left, r.right, de.left, de.right, p.x, c.x); }
+      else { if (p.y >= c.y - 4) continue; frente = de.top - r.bottom; lado = sobra(r.left, r.right, de.left, de.right, p.x, c.x); }
+      lista.push({ el, r, v: Math.max(frente, -20) + lado * (horiz ? 4 : 1.5) });
+    }
+    lista.sort((a, b) => a.v - b.v);
+    for (const { el, r } of lista.slice(0, 12)) {
+      if (el.contains(atual) || atual.contains(el)) continue;
+      if (utilizavel(el, r)) return externo(el);
+    }
+    return null;
   }
 
   function marcar(el) {
@@ -97,15 +105,21 @@
       el.dispatchEvent(new (t.startsWith('pointer') ? PointerEvent : MouseEvent)(t, opts));
     }
     if (r.top < 60 || r.bottom > innerHeight - 60 || r.left < 0 || r.right > innerWidth) {
-      el.scrollIntoView({ block: 'center', inline: 'center', behavior: 'smooth' });
+      el.scrollIntoView({ block: 'center', inline: 'nearest' });
     }
   }
 
   function primeiro() {
-    const lista = candidatos(0).filter(({ r }) => r.top >= 0 && r.bottom <= innerHeight);
+    const lista = [];
+    for (const el of document.querySelectorAll(SELETOR)) {
+      const r = el.getBoundingClientRect();
+      if (r.width >= 6 && r.height >= 6 && r.top >= 0 && r.bottom <= innerHeight && r.left >= 0 && r.right <= innerWidth) lista.push({ el, r });
+    }
     lista.sort((a, b) => (a.r.top - b.r.top) || (a.r.left - b.r.left));
     // Pula o menu do topo quando houver conteúdo
-    return (lista.find(({ r }) => r.top > innerHeight * 0.15) || lista[0] || {}).el || null;
+    const ordem = lista.filter(({ r }) => r.top > innerHeight * 0.15).concat(lista);
+    for (const { el, r } of ordem.slice(0, 30)) if (utilizavel(el, r)) return externo(el);
+    return null;
   }
 
   function rolarPara(dir) {
@@ -156,10 +170,10 @@
 
     if (dir) {
       parar(e);
-      if (!atual || !atual.isConnected || !retangulo(atual, innerHeight)) { marcar(primeiro()); return; }
-      const prox = melhor(dir, 0) || melhor(dir, innerHeight);
+      if (!atual || !atual.isConnected || !perto(atual.getBoundingClientRect(), innerHeight)) { marcar(primeiro()); return; }
+      const prox = melhor(dir);
       if (prox) marcar(prox);
-      else { rolarPara(dir); setTimeout(() => { const p = melhor(dir, 0); if (p) marcar(p); }, 400); }
+      else { rolarPara(dir); setTimeout(() => { const p = melhor(dir); if (p) marcar(p); }, 350); }
       return;
     }
     if (e.key === 'Enter' && atual && atual.isConnected) {
