@@ -98,3 +98,45 @@ button { font: inherit; color: inherit; border: 0; background: none; touch-actio
 .gestos-dica b { color: var(--texto); }
 #gestos-seta { position: absolute; width: 90px; height: 90px; border-radius: 50%; background: rgba(61,123,255,.25); display: grid; place-items: center; font-size: 40px; opacity: 0; transition: opacity .25s; pointer-events: none; }
 #gestos-seta.ver { opacity: 1; transition: none; }
+
+/* ---------- Ajustes ---------- */
+.topo-botoes { display: flex; gap: 8px; }
+.ajustes { flex: 1; overflow: auto; padding: 8px 16px 40px; display: flex; flex-direction: column; gap: 14px; }
+.cartao-aj { background: var(--painel); border-radius: 18px; padding: 14px; display: flex; flex-direction: column; gap: 12px; }
+.cartao-aj h2 { margin: 0; font-size: 15px; letter-spacing: .02em; }
+.cartao-aj p.ajuda { margin: -6px 0 0; font-size: 12px; color: var(--suave); line-height: 1.4; }
+.linha-aj { display: flex; align-items: center; gap: 10px; min-height: 40px; }
+.linha-aj > .rot { flex: 1; font-size: 14px; }
+.linha-aj small { display: block; color: var(--suave); font-size: 11px; }
+.aj-input { background: var(--painel2); border: 1px solid #2a2e3a; border-radius: 12px; color: var(--texto); padding: 10px 12px; font-size: 15px; min-width: 0; flex: 1; outline: none; }
+.aj-input:focus { border-color: var(--azul); }
+.aj-btn { padding: 9px 12px; border-radius: 12px; background: var(--painel2); font-size: 13px; font-weight: 600; white-space: nowrap; }
+.aj-btn.primario { background: var(--azul); }
+.aj-btn.perigo { color: var(--vermelho); }
+.aj-btn:disabled { opacity: .4; }
+.chave { position: relative; width: 48px; height: 28px; flex: 0 0 auto; }
+.chave input { opacity: 0; width: 0; height: 0; position: absolute; }
+.chave span { position: absolute; inset: 0; border-radius: 99px; background: #3a3f4d; transition: background .2s; }
+.chave span::after { content: ""; position: absolute; width: 22px; height: 22px; left: 3px; top: 3px; border-radius: 50%; background: #fff; transition: transform .2s; }
+.chave input:checked + span { background: var(--verde); }
+.chave input:checked + span::after { transform: translateX(20px); }
+.perfis { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 4px; }
+.perfil-chip { flex: 0 0 auto; display: flex; flex-direction: column; align-items: center; gap: 6px; width: 72px; font-size: 12px; }
+.perfil-chip .av { width: 56px; height: 56px; border-radius: 18px; display: grid; place-items: center; font-size: 28px; border: 3px solid transparent; }
+.perfil-chip.atual .av { border-color: #fff; }
+.emojis { display: flex; flex-wrap: wrap; gap: 6px; }
+.emojis button { width: 40px; height: 40px; border-radius: 12px; background: var(--painel2); font-size: 22px; }
+.emojis button.sel { outline: 2px solid var(--azul); }
+.app-aj { display: grid; grid-template-columns: 64px 1fr auto; gap: 10px; align-items: center; padding: 8px 0; border-top: 1px solid #222632; }
+.app-aj:first-of-type { border-top: 0; }
+.app-aj .mini { width: 64px; height: 36px; border-radius: 8px; background: #222 center / cover; }
+.app-aj .nome-aj { font-size: 14px; font-weight: 600; }
+.app-aj .acoes-aj { display: flex; gap: 6px; flex-wrap: wrap; grid-column: 1 / -1; }
+.setas-aj { display: flex; gap: 4px; }
+.setas-aj button { width: 34px; height: 34px; border-radius: 10px; background: var(--painel2); font-size: 16px; }
+.marcar { display: flex; flex-wrap: wrap; gap: 8px; }
+.marcar label { display: flex; align-items: center; gap: 6px; padding: 8px 10px; border-radius: 12px; background: var(--painel2); font-size: 13px; }
+.progresso { height: 4px; border-radius: 4px; background: #2a2e3a; overflow: hidden; }
+.progresso i { display: block; height: 100%; width: 0; background: var(--azul); transition: width .2s; }
+.toast { position: fixed; left: 50%; bottom: 90px; transform: translateX(-50%); background: #fff; color: #000; padding: 10px 16px; border-radius: 99px; font-size: 14px; font-weight: 600; z-index: 99; max-width: 90vw; text-align: center; }
+.selo-crianca { display: inline-block; padding: 3px 8px; border-radius: 99px; background: #f5c542; color: #000; font-size: 11px; font-weight: 700; }

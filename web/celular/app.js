@@ -9,6 +9,7 @@ const vibrar = (ms = 12) => navigator.vibrate && navigator.vibrate(ms);
 function tela(nome) {
   $('#tela-parear').classList.toggle('oculto', nome !== 'parear');
   $('#tela-controle').classList.toggle('oculto', nome !== 'controle');
+  $('#tela-ajustes').classList.toggle('oculto', nome !== 'ajustes');
 }
 
 async function api(url, opts = {}) {
@@ -227,7 +228,9 @@ document.addEventListener('visibilitychange', () => { if (!document.hidden) mant
 // ---------- Apps ----------
 async function carregarApps() {
   try {
-    const { apps } = await api('api/apps');
+    const { apps, crianca } = await api('api/apps');
+    // Modo criança: sem desligar, reiniciar e timer
+    document.querySelectorAll('#aba-apps .sistema, #aba-apps .timer').forEach(el => el.classList.toggle('oculto', !!crianca));
     const lista = $('#lista-apps');
     lista.innerHTML = '';
     for (const a of apps) {

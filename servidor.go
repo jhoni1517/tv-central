@@ -481,8 +481,14 @@ func (s *Servidor) executar(m Msg) error {
 	case "inicio":
 		s.ger.Inicio()
 	case "sistema":
+		if s.aj.Ler().Crianca.Ativo {
+			return errModoCrianca
+		}
 		return acaoSistema(m.K)
 	case "timer":
+		if s.aj.Ler().Crianca.Ativo {
+			return errModoCrianca
+		}
 		s.timer.Definir(m.Min)
 	case "ping":
 	default:

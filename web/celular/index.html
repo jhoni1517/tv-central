@@ -31,7 +31,10 @@
 <section id="tela-controle" class="tela oculto">
   <header class="topo">
     <div class="logo"><span id="status" class="ponto"></span>TV Central <span id="latencia"></span></div>
-    <button id="btn-inicio-topo" class="redondo pequeno" aria-label="Tela inicial">⌂</button>
+    <div class="topo-botoes">
+      <button id="btn-ajustes" class="redondo pequeno" aria-label="Ajustes">⚙</button>
+      <button id="btn-inicio-topo" class="redondo pequeno" aria-label="Tela inicial">⌂</button>
+    </div>
   </header>
 
   <div id="reconectando" class="reconectando oculto">Reconectando ao PC…</div>
@@ -105,6 +108,17 @@
   </nav>
 </section>
 
+<!-- Ajustes -->
+<section id="tela-ajustes" class="tela oculto">
+  <header class="topo">
+    <button id="ajustes-voltar" class="redondo pequeno" aria-label="Voltar">←</button>
+    <div class="logo">Ajustes</div>
+    <span style="width:46px"></span>
+  </header>
+  <div id="ajustes-corpo" class="ajustes"></div>
+</section>
+
 <script src="app.js"></script>
+<script src="ajustes.js"></script>
 </body>
 </html>
