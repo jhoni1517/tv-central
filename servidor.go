@@ -57,6 +57,12 @@ func escutar(porta int) (net.Listener, error) {
 }
 
 func (s *Servidor) Rodar(l net.Listener) error {
+	srv := &http.Server{Handler: s.rotas(), ReadHeaderTimeout: 10 * time.Second}
+	log.Printf("ouvindo na porta %d: %s", s.cfg.Porta, strings.Join(enderecos(s.cfg.Porta), " "))
+	return srv.Serve(l)
+}
+
+func (s *Servidor) rotas() http.Handler {
 	mux := http.NewServeMux()
 	celular, _ := fs.Sub(arquivosWeb, "web/celular")
 	tv, _ := fs.Sub(arquivosWeb, "web/tv")
@@ -81,6 +87,10 @@ func (s *Servidor) Rodar(l net.Listener) error {
 	mux.HandleFunc("POST /tv/api/abrir", soLocalF(s.abrirPelaTV))
 	mux.HandleFunc("POST /tv/api/sistema", soLocalF(s.sistema))
 	mux.HandleFunc("POST /tv/api/atualizar", soLocalF(s.atualizarAgora))
+	mux.HandleFunc("POST /tv/api/desktop", soLocalF(func(w http.ResponseWriter, r *http.Request) {
+		go s.ger.AreaDeTrabalho()
+		responder(w, map[string]any{"ok": true})
+	}))
 	mux.HandleFunc("POST /tv/api/mostrar", soLocalF(func(w http.ResponseWriter, r *http.Request) {
 		go s.ger.AbrirLauncher()
 		responder(w, map[string]any{"ok": true, "versao": versao})
@@ -92,9 +102,7 @@ func (s *Servidor) Rodar(l net.Listener) error {
 		responder(w, map[string]any{"timer": s.timer.Restante()})
 	}))
 
-	srv := &http.Server{Handler: mesmaOrigem(mux), ReadHeaderTimeout: 10 * time.Second}
-	log.Printf("ouvindo na porta %d: %s", s.cfg.Porta, strings.Join(enderecos(s.cfg.Porta), " "))
-	return srv.Serve(l)
+	return mesmaOrigem(mux)
 }
 
 func responder(w http.ResponseWriter, v any) {

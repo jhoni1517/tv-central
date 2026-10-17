@@ -38,14 +38,16 @@ $('#form-codigo').onsubmit = async ev => {
 // ---------- Conexão ----------
 function conectar() {
   const proto = location.protocol === 'https:' ? 'wss' : 'ws';
-  ws = new WebSocket(`${proto}://${location.host}/ws?token=${encodeURIComponent(token)}`);
+  const este = ws = new WebSocket(`${proto}://${location.host}/ws?token=${encodeURIComponent(token)}`);
   ws.onopen = () => {
+    if (ws !== este) return;
     espera = 500;
     $('#status').classList.add('on');
     $('#reconectando').classList.add('oculto');
     fila.splice(0).forEach(m => ws.send(m));
   };
   ws.onclose = async () => {
+    if (ws !== este) return; // conexão antiga: já existe outra
     $('#status').classList.remove('on');
     $('#reconectando').classList.remove('oculto');
     try { await api('api/eu'); } catch (e) { if (e.status === 401) { localStorage.removeItem('tvc-token'); token = ''; tela('parear'); return; } }
@@ -83,11 +85,15 @@ window.addEventListener('online', reconectarJa);
 window.addEventListener('pageshow', reconectarJa);
 
 // ---------- Botões (segurar repete) ----------
+const pararTodos = new Set();
+document.addEventListener('visibilitychange', () => { if (document.hidden) pararTodos.forEach(f => f()); });
 function botaoRepete(el, acao) {
   let t1, t2;
   const parar = () => { clearTimeout(t1); clearInterval(t2); };
+  pararTodos.add(parar);
   el.addEventListener('pointerdown', e => {
     e.preventDefault();
+    parar(); // dois dedos no mesmo botão não deixam repetição presa
     acao(); vibrar();
     if (el.hasAttribute('data-repete')) t1 = setTimeout(() => (t2 = setInterval(acao, 110)), 400);
   });

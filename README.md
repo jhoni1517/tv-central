@@ -42,6 +42,7 @@ Isso também libera a busca por voz.
 | Início | Fecha o app e volta para a tela inicial |
 | Campo de texto | Digita na TV e aperta Enter |
 | 🎤 | Busca por voz |
+| Gestos | Deslize = setas, toque = OK, segure = Voltar |
 | Touchpad | Mouse: arraste, toque para clicar, dois dedos para rolar |
 
 Com vídeo tocando em tela grande, **OK pausa/continua** e as setas ficam com o player (avançar/voltar).
@@ -59,6 +60,8 @@ O controle da TV fala com a TV por infravermelho; o PC não recebe esse sinal so
 | Vol + / − / Mudo | teclas de volume |
 
 A tecla **Home do navegador** e **Ctrl+Alt+H** voltam para a tela inicial de qualquer lugar.
+
+Para mexer no Windows: **Sistema → Área de trabalho** fecha a tela inicial até você apertar Início de novo. Se a tela inicial fechar por acidente, ela reabre sozinha.
 
 ## Personalizar
 
@@ -81,6 +84,7 @@ Edite `%LOCALAPPDATA%\TVCentral\config.json` e reinicie o programa:
 - `setas: false` desliga a navegação por setas num site.
 - `perfil`: perfil separado do navegador (logins ficam salvos por perfil).
 - `"intro": false` desliga a abertura; `"volumeIntro"` vai de 0 a 1 (padrão 0.5).
+- `"cidade": "Curitiba"` mostra o clima no topo da tela inicial.
 - `"sons": false` desliga os sons de navegação; `"protetorMin"`: minutos até o protetor de tela (0 desliga).
 
 ## Atualizações
@@ -97,9 +101,11 @@ No celular: **Apps → Diagnóstico** mostra a versão, a rede e as últimas lin
 
 O medidor ao lado do nome no controle mostra o tempo de resposta do PC: verde até 80 ms. Se ficar vermelho, o problema é o Wi-Fi.
 
-## Imagens dos apps
+## Imagens e vídeos dos apps
 
 As artes que vêm no programa são próprias (sem logos). Para usar a sua imagem num app, coloque em `%LOCALAPPDATA%\TVCentral\capas\` um arquivo com o id do app: `netflix.jpg`, `hbomax.jpg`, `disney.jpg`, `appletv.jpg`, `youtube.jpg`, `prime.jpg`, `globoplay.jpg` (ou `.png`/`.webp`, de preferência 1600×900 e mais escura à esquerda).
+
+**Vídeos de fundo:** coloque `netflix.mp4`, `disney.webm` etc. na mesma pasta. O vídeo toca sem som no fundo quando o app está selecionado e no protetor de tela; `fundo.mp4` toca quando nenhum app está selecionado. Prefira vídeos curtos (10 a 60 s), 720p ou 1080p, em H.264 (`.mp4`). O vídeo para sozinho enquanto um app está aberto. Para desligar: `"videosFundo": false`.
 
 ## Remover
 

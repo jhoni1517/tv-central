@@ -17,16 +17,17 @@ const portaDepuracao = 39222 // pouco usada por outros programas
 
 // Gerente abre e fecha os apps e mantém o launcher.
 type Gerente struct {
-	mu           sync.Mutex
-	trocando     sync.Mutex // um abrir/fechar por vez (dois toques rápidos não abrem dois apps)
-	dados        string
-	porta        int
-	atual        *os.Process
-	atualWeb     bool
-	atualID      string
-	cancelar     context.CancelFunc
-	launcherPID  int
-	launcherVivo bool
+	mu               sync.Mutex
+	trocando         sync.Mutex // um abrir/fechar por vez (dois toques rápidos não abrem dois apps)
+	dados            string
+	porta            int
+	atual            *os.Process
+	atualWeb         bool
+	atualID          string
+	cancelar         context.CancelFunc
+	launcherPID      int
+	launcherVivo     bool
+	naAreaDeTrabalho bool // a pessoa pediu a área de trabalho: não reabre a tela inicial sozinho
 }
 
 func novoGerente(dados string, porta int) *Gerente {
@@ -93,7 +94,8 @@ func (g *Gerente) AbrirLauncher() {
 	nav, edge := acharNavegador()
 	if nav == "" {
 		log.Printf("launcher: Edge/Chrome não encontrado")
-		avisar("TV Central", "Não achei o Microsoft Edge nem o Chrome. Instale o Edge para usar a tela inicial.")
+		g.naAreaDeTrabalho = true // não fica tentando (e avisando) de novo
+		go avisar("TV Central", "Não achei o Microsoft Edge nem o Chrome. Instale o Edge para usar a tela inicial.")
 		return
 	}
 	url := fmt.Sprintf("http://127.0.0.1:%d/tv/", g.porta)
@@ -104,6 +106,7 @@ func (g *Gerente) AbrirLauncher() {
 	cmd := exec.Command(nav, args...)
 	if err := cmd.Start(); err != nil {
 		log.Printf("launcher: %v", err)
+		g.naAreaDeTrabalho = true
 		return
 	}
 	log.Printf("launcher aberto (pid %d)", cmd.Process.Pid)
@@ -279,8 +282,42 @@ func (g *Gerente) fechar() {
 	}
 }
 
+// Vigia reabre a tela inicial se ela fechar (ex.: Alt+F4) e nenhum app estiver aberto.
+func (g *Gerente) Vigia() {
+	parado := 0
+	for range time.Tick(3 * time.Second) {
+		g.mu.Lock()
+		sozinho := !g.launcherVivo && g.atual == nil && !g.naAreaDeTrabalho
+		g.mu.Unlock()
+		if sozinho {
+			parado++
+		} else {
+			parado = 0
+		}
+		if parado >= 3 { // ~9 s sem nada na tela
+			log.Printf("tela inicial estava fechada: reabrindo")
+			g.AbrirLauncher()
+			parado = 0
+		}
+	}
+}
+
+// AreaDeTrabalho fecha a tela inicial até a pessoa apertar Início de novo.
+func (g *Gerente) AreaDeTrabalho() {
+	g.mu.Lock()
+	g.naAreaDeTrabalho = true
+	pid, vivo := g.launcherPID, g.launcherVivo
+	g.mu.Unlock()
+	if vivo {
+		matarArvore(pid)
+	}
+}
+
 // Inicio fecha o app e volta para a tela inicial.
 func (g *Gerente) Inicio() {
+	g.mu.Lock()
+	g.naAreaDeTrabalho = false
+	g.mu.Unlock()
 	g.trocando.Lock()
 	g.fechar()
 	g.trocando.Unlock()

@@ -170,6 +170,8 @@ async function ativar() {
   if (!el) return;
   Som.ok();
   if (el.dataset.id) {
+    if (Date.now() - (ativar.ultima || 0) < 2500) return; // já está abrindo
+    ativar.ultima = Date.now();
     try { localStorage.setItem('ultimo-app', el.dataset.id); } catch (_) {}
     $('#abrindo-texto').textContent = `Abrindo ${el.dataset.nome}…`;
     $('#abrindo').style.backgroundImage = `linear-gradient(rgba(0,0,0,.55), rgba(0,0,0,.55)), url("/capa/${el.dataset.id}")`;
@@ -181,6 +183,11 @@ async function ativar() {
   const acao = el.dataset.acao;
   if (acao === 'celular') { $('#qr').classList.toggle('oculto'); return; }
   if (acao === 'timer') { proximoTimer(); return; }
+  if (acao === 'desktop') {
+    aviso('Indo para a área de trabalho. Aperte Início no celular para voltar.', 3000);
+    setTimeout(() => post('api/desktop', {}).catch(() => {}), 800);
+    return;
+  }
   if (acao === 'atualizar') {
     aviso('Procurando versão nova…');
     try {
@@ -203,7 +210,7 @@ function fecharModal() { modal = null; mostrar('#confirmar', false); }
 function pintarModal() { botoesModal().forEach((b, i) => b.classList.toggle('foco', i === focoModal)); }
 
 document.addEventListener('keydown', async e => {
-  const k = e.key;
+  const k = e.key === 'BrowserBack' || e.key === 'GoBack' ? 'Escape' : e.key;
   if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Enter', 'Escape', ' '].includes(k)) e.preventDefault();
   if (modal) {
     if (k === 'ArrowLeft' || k === 'ArrowRight') { focoModal = 1 - focoModal; pintarModal(); }
@@ -211,7 +218,7 @@ document.addEventListener('keydown', async e => {
     else if (k === 'Enter') {
       const sim = focoModal === 0;
       fecharModal();
-      if (sim) post('api/sistema', { acao: confirmarAcao }).catch(err => alert(err.message));
+      if (sim) post('api/sistema', { acao: confirmarAcao }).catch(err => aviso('Não deu: ' + err.message));
     }
     return;
   }
@@ -226,7 +233,7 @@ document.addEventListener('keydown', async e => {
 // Mouse também funciona (modo touchpad do celular)
 document.addEventListener('click', e => {
   const c = e.target.closest('.cartao');
-  if (c) {
+  if (c && !modal) {
     linhas.forEach((l, li) => { const i = l.indexOf(c); if (i >= 0) pos = { linha: li, col: i }; });
     focar(); ativar();
   }
@@ -235,7 +242,12 @@ document.addEventListener('click', e => {
 });
 // Mouse: o cursor aparece ao mexer (inclusive em cima dos cartões) e some depois de parado.
 // Passar o mouse por cima de um cartão já seleciona ele.
+let ultimoMouse = { x: 0, y: 0 };
+const mouseMexeu = e => { const m = Math.abs(e.screenX - ultimoMouse.x) + Math.abs(e.screenY - ultimoMouse.y) > 4; ultimoMouse = { x: e.screenX, y: e.screenY }; return m; };
+// Rodinha do mouse anda entre os cartões
+document.addEventListener('wheel', e => { if (!modal && Math.abs(e.deltaY) > 20) { mover(0, e.deltaY > 0 ? 1 : -1); } }, { passive: true });
 document.addEventListener('mousemove', e => {
+  if (!mouseMexeu(e)) return;
   document.body.classList.add('com-mouse');
   clearTimeout(window.__cur);
   window.__cur = setTimeout(() => document.body.classList.remove('com-mouse'), 4000);
@@ -369,7 +381,7 @@ function trocarProtetor() {
 }
 // Qualquer tecla/mouse com o protetor ligado só desliga ele (não navega)
 window.addEventListener('keydown', e => { if (protetorAtivo) { e.preventDefault(); e.stopImmediatePropagation(); desligarProtetor(); } else usou(); }, true);
-window.addEventListener('mousemove', () => { if (protetorAtivo) desligarProtetor(); else usou(); }, true);
+window.addEventListener('mousemove', e => { if (Math.abs(e.movementX) + Math.abs(e.movementY) < 4) return; if (protetorAtivo) desligarProtetor(); else usou(); }, true);
 window.addEventListener('focus', () => { if (protetorAtivo) desligarProtetor(); usou(); });
 setInterval(() => {
   if (protetorAtivo) { $('#prot-relogio').textContent = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }); return; }

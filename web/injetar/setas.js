@@ -144,6 +144,7 @@
 
   window.addEventListener('keydown', e => {
     if (e.ctrlKey || e.altKey || e.metaKey) return;
+    if (e.key === 'BrowserBack' || e.key === 'GoBack') { parar(e); if (history.length > 1) history.back(); return; }
     const dir = DIRS[e.key];
     const foco = document.activeElement;
 

@@ -61,17 +61,25 @@ func matarArvore(pid int) {
 }
 
 var (
-	muJanela     sync.Mutex
-	pidProcura   uint32
-	achada       uintptr
+	procGetWindowRect = user32.NewProc("GetWindowRect")
+	muJanela          sync.Mutex
+	pidProcura        uint32
+	achada            uintptr
+	maiorArea         int64
+	// Entre as janelas visíveis do processo, fica com a maior (a principal, não um balão ou menu).
 	callbackEnum = syscall.NewCallback(func(hwnd, _ uintptr) uintptr {
 		var pid uint32
 		procGetWindowThreadPID.Call(hwnd, uintptr(unsafe.Pointer(&pid)))
-		if pid == pidProcura {
-			if v, _, _ := procIsWindowVisible.Call(hwnd); v != 0 {
-				achada = hwnd
-				return 0
-			}
+		if pid != pidProcura {
+			return 1
+		}
+		if v, _, _ := procIsWindowVisible.Call(hwnd); v == 0 {
+			return 1
+		}
+		var r struct{ L, T, R, B int32 }
+		procGetWindowRect.Call(hwnd, uintptr(unsafe.Pointer(&r)))
+		if area := int64(r.R-r.L) * int64(r.B-r.T); area > maiorArea {
+			maiorArea, achada = area, hwnd
 		}
 		return 1
 	})
@@ -80,7 +88,7 @@ var (
 func janelaDo(pid int) uintptr {
 	muJanela.Lock()
 	defer muJanela.Unlock()
-	pidProcura, achada = uint32(pid), 0
+	pidProcura, achada, maiorArea = uint32(pid), 0, 0
 	procEnumWindows.Call(callbackEnum, 0)
 	return achada
 }
