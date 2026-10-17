@@ -27,6 +27,7 @@ type Pareamento struct {
 	codigo     string
 	expira     time.Time
 	tentativas int
+	bloqueado  time.Time // depois de muitas tentativas erradas, espera um pouco
 }
 
 func novoPareamento(arquivo string) (*Pareamento, error) {
@@ -59,6 +60,9 @@ func (p *Pareamento) IniciarCodigo() bool {
 	if p.codigo != "" && time.Now().Before(p.expira) {
 		return false
 	}
+	if time.Now().Before(p.bloqueado) {
+		return false
+	}
 	n, _ := rand.Int(rand.Reader, big.NewInt(1000000))
 	p.codigo = fmt.Sprintf("%06d", n.Int64())
 	p.expira = time.Now().Add(3 * time.Minute)
@@ -87,6 +91,7 @@ func (p *Pareamento) Confirmar(codigo, nome string) (string, error) {
 		p.tentativas++
 		if p.tentativas >= 5 {
 			p.codigo = ""
+			p.bloqueado = time.Now().Add(time.Minute)
 			return "", fmt.Errorf("muitas tentativas: peça outro código")
 		}
 		return "", fmt.Errorf("código errado")

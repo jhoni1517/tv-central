@@ -16,7 +16,10 @@
     setTimeout(() => { el.remove(); document.body.classList.remove('entrando'); }, 700);
     if (musica) musica.parar();
   }
-  const pular = e => { if (!acabou) { e.preventDefault(); e.stopImmediatePropagation(); terminar(); } };
+  const pular = e => {
+    if (acabou || ['Alt', 'Control', 'Shift', 'Meta', 'AltGraph'].includes(e.key)) return;
+    e.preventDefault(); e.stopImmediatePropagation(); terminar();
+  };
   window.addEventListener('keydown', pular, true);
   window.addEventListener('click', pular, true);
 

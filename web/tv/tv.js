@@ -45,6 +45,11 @@ function montarApps(apps) {
   }
   linhas[0] = [...caixa.children];
   linhas[1] = [...$('#sistema').children];
+  let ultimo = null;
+  try { ultimo = localStorage.getItem('ultimo-app'); } catch (_) {}
+  const i = linhas[0].findIndex(b => b.dataset.id === ultimo);
+  if (!montarApps.feito && i >= 0) pos = { linha: 0, col: i };
+  montarApps.feito = true;
   pos.col = Math.min(pos.col, linhas[pos.linha].length - 1);
   focar();
 }
@@ -103,6 +108,7 @@ async function ativar() {
   const el = linhas[pos.linha][pos.col];
   if (!el) return;
   if (el.dataset.id) {
+    try { localStorage.setItem('ultimo-app', el.dataset.id); } catch (_) {}
     $('#abrindo-texto').textContent = `Abrindo ${el.dataset.nome}…`;
     mostrar('#abrindo', true);
     setTimeout(() => mostrar('#abrindo', false), 4000);

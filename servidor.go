@@ -139,6 +139,9 @@ func (s *Servidor) autenticado(f http.HandlerFunc) http.HandlerFunc {
 func (s *Servidor) iniciarPareamento(w http.ResponseWriter, r *http.Request) {
 	if s.par.IniciarCodigo() {
 		s.ger.AbrirLauncher() // o código aparece na tela inicial
+	} else if s.par.Pendente() == "" {
+		erro(w, http.StatusTooManyRequests, "muitas tentativas: espere 1 minuto")
+		return
 	}
 	responder(w, map[string]any{"ok": true})
 }

@@ -44,6 +44,20 @@ Isso também libera a busca por voz.
 
 Com vídeo tocando em tela grande, **OK pausa/continua** e as setas ficam com o player (avançar/voltar).
 
+## Controle remoto da TV
+
+O controle da TV fala com a TV por infravermelho; o PC não recebe esse sinal sozinho. Com um **receptor infravermelho USB que aprende botões** (ex.: FLIRC), ensine:
+
+| Botão do controle | Tecla |
+|---|---|
+| Setas / OK | Setas / Enter |
+| Return | Esc |
+| Home | Home do navegador (tecla de mídia) |
+| Play/Pause | Play/Pause (tecla de mídia) |
+| Vol + / − / Mudo | teclas de volume |
+
+A tecla **Home do navegador** e **Ctrl+Alt+H** voltam para a tela inicial de qualquer lugar.
+
 ## Personalizar
 
 Edite `%LOCALAPPDATA%\TVCentral\config.json` e reinicie o programa:
@@ -64,6 +78,7 @@ Edite `%LOCALAPPDATA%\TVCentral\config.json` e reinicie o programa:
 - `tipo`: `web` (abre no Edge em tela cheia) ou `programa` (um `.exe`).
 - `setas: false` desliga a navegação por setas num site.
 - `perfil`: perfil separado do navegador (logins ficam salvos por perfil).
+- `"intro": false` desliga a abertura; `"volumeIntro"` vai de 0 a 1 (padrão 0.5).
 
 ## Atualizações
 
