@@ -88,22 +88,22 @@ func (s *Servidor) rotas() http.Handler {
 	mux.HandleFunc("GET /tv/api/estado", soLocalF(s.estadoTV))
 	mux.HandleFunc("GET /tv/qr.png", soLocalF(s.qr))
 	mux.HandleFunc("POST /tv/api/abrir", soLocalF(s.abrirPelaTV))
-	mux.HandleFunc("POST /tv/api/sistema", soLocalF(s.sistema))
-	mux.HandleFunc("POST /tv/api/atualizar", soLocalF(s.atualizarAgora))
-	mux.HandleFunc("POST /tv/api/desktop", soLocalF(func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("POST /tv/api/sistema", soLocalF(s.semCrianca(s.sistema)))
+	mux.HandleFunc("POST /tv/api/atualizar", soLocalF(s.semCrianca(s.atualizarAgora)))
+	mux.HandleFunc("POST /tv/api/desktop", soLocalF(s.semCrianca(func(w http.ResponseWriter, r *http.Request) {
 		go s.ger.AreaDeTrabalho()
 		responder(w, map[string]any{"ok": true})
-	}))
+	})))
 	mux.HandleFunc("POST /tv/api/mostrar", soLocalF(func(w http.ResponseWriter, r *http.Request) {
 		go s.ger.AbrirLauncher()
 		responder(w, map[string]any{"ok": true, "versao": versao})
 	}))
-	mux.HandleFunc("POST /tv/api/timer", soLocalF(func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("POST /tv/api/timer", soLocalF(s.semCrianca(func(w http.ResponseWriter, r *http.Request) {
 		var req struct{ Min int }
 		_ = json.NewDecoder(http.MaxBytesReader(w, r.Body, 1024)).Decode(&req)
 		s.timer.Definir(req.Min)
 		responder(w, map[string]any{"timer": s.timer.Restante()})
-	}))
+	})))
 
 	return mesmaOrigem(mux)
 }
@@ -546,4 +546,15 @@ func (s *Servidor) perfilPublico() map[string]string {
 		}
 	}
 	return nil
+}
+
+// semCrianca bloqueia ações de sistema enquanto o modo criança está ligado.
+func (s *Servidor) semCrianca(f http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if s.aj.Ler().Crianca.Ativo {
+			erro(w, http.StatusForbidden, errModoCrianca.Error())
+			return
+		}
+		f(w, r)
+	}
 }

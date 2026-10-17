@@ -206,3 +206,16 @@ func TestPainelEnvioECrianca(t *testing.T) {
 		t.Errorf("sair: %d", w.Code)
 	}
 }
+
+func TestCriancaBloqueiaSistemaNaTV(t *testing.T) {
+	s, _ := servidorTeste(t)
+	h := s.rotas()
+	if err := s.aj.EntrarCrianca("1234", []string{"youtubekids"}); err != nil {
+		t.Fatal(err)
+	}
+	for _, rota := range []string{"sistema", "timer", "desktop", "atualizar"} {
+		if w := pedir(h, "POST", "http://127.0.0.1:8765/tv/api/"+rota, `{"acao":"desligar","min":30}`, nil, local); w.Code != 403 {
+			t.Errorf("%s no modo criança: %d", rota, w.Code)
+		}
+	}
+}
