@@ -138,6 +138,7 @@ func rodar(op Opcoes) {
 		go ger.AbrirLauncher()
 	}
 	atalhosGlobais(ger.Inicio)
+	go srv.clima.Loop()
 	if cfg.atualizarAuto() {
 		go srv.atu.Loop(dados, ger, func() bool { return srv.timer.Restante() == 0 })
 	}

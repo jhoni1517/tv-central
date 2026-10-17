@@ -91,3 +91,10 @@ button { font: inherit; color: inherit; border: 0; background: none; touch-actio
 .timer { background: var(--painel); border-radius: 16px; padding: 12px 14px; display: flex; flex-direction: column; gap: 10px; }
 .timer-botoes { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
 .timer-botoes button { padding: 10px 0; border-radius: 12px; background: var(--painel2); font-weight: 600; font-size: 13px; }
+
+.abas { grid-template-columns: repeat(4, 1fr) !important; }
+#gestos { flex: 1; min-height: 340px; border-radius: 22px; background: radial-gradient(circle at 50% 45%, #232631, var(--painel) 70%); position: relative; display: grid; place-items: center; touch-action: none; overflow: hidden; }
+.gestos-dica { text-align: center; color: var(--suave); line-height: 1.7; font-size: 14px; pointer-events: none; }
+.gestos-dica b { color: var(--texto); }
+#gestos-seta { position: absolute; width: 90px; height: 90px; border-radius: 50%; background: rgba(61,123,255,.25); display: grid; place-items: center; font-size: 40px; opacity: 0; transition: opacity .25s; pointer-events: none; }
+#gestos-seta.ver { opacity: 1; transition: none; }

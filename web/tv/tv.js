@@ -172,6 +172,7 @@ async function ativar() {
   if (el.dataset.id) {
     try { localStorage.setItem('ultimo-app', el.dataset.id); } catch (_) {}
     $('#abrindo-texto').textContent = `Abrindo ${el.dataset.nome}…`;
+    $('#abrindo').style.backgroundImage = `linear-gradient(rgba(0,0,0,.55), rgba(0,0,0,.55)), url("/capa/${el.dataset.id}")`;
     mostrar('#abrindo', true);
     setTimeout(() => mostrar('#abrindo', false), 4000);
     try { await post('api/abrir', { id: el.dataset.id }); } catch (e) { $('#abrindo-texto').textContent = 'Não abriu: ' + e.message; }
@@ -256,6 +257,11 @@ async function estado() {
     Som.ligado = s.sons !== false;
     if (typeof s.protetorMin === 'number') protetorMin = s.protetorMin;
     mostrarTimer(s.timer || 0);
+    const cl = $('#clima');
+    if (s.clima) { cl.textContent = `${s.clima.icone} ${Math.round(s.clima.temp)}°`; cl.title = s.clima.texto; }
+    mostrar('#clima', !!s.clima);
+    $('#cel-chip').textContent = '📱 ' + (s.conectados || 0);
+    mostrar('#cel-chip', s.conectados > 0);
     videosLigados = s.videosFundo !== false;
     const novos = (s.videos || []).join(',');
     if (novos !== estado.videos) {
@@ -373,6 +379,9 @@ setInterval(() => {
 relogio();
 setInterval(relogio, 5000);
 linhas[1] = [...$('#sistema').children];
-estado();
-setInterval(estado, 1500);
+// Com a tela inicial na frente: atualiza a cada 1,5 s. Com um app aberto: a cada 6 s (economiza).
+(function laco() {
+  estado();
+  setTimeout(laco, document.hasFocus() && !document.hidden ? 1500 : 6000);
+})();
 window.addEventListener('focus', () => mostrar('#abrindo', false));

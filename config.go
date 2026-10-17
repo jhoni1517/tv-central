@@ -53,6 +53,7 @@ type Config struct {
 	VolumeIntro   *float64          `json:"volumeIntro,omitempty"` // 0 a 1 (padrão 0.5)
 	Sons          *bool             `json:"sons,omitempty"`        // sons ao navegar na tela inicial
 	VideosFundo   *bool             `json:"videosFundo,omitempty"` // tocar os vídeos da pasta capas no fundo
+	Cidade        string            `json:"cidade,omitempty"`      // clima no topo (ex.: "Curitiba")
 	ProtetorMin   *int              `json:"protetorMin,omitempty"` // minutos parado até o protetor de tela (0 desliga)
 	Apps          []json.RawMessage `json:"apps"`
 	apps          []App
@@ -82,6 +83,7 @@ const exemploConfig = `{
   "intro": true,
   "volumeIntro": 0.5,
   "sons": true,
+  "cidade": "",
   "protetorMin": 10,
   "apps": []
 }

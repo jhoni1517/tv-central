@@ -11,6 +11,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync/atomic"
 	"time"
 
 	"github.com/gorilla/websocket"
@@ -32,12 +33,14 @@ type Servidor struct {
 	atu         *Atualizador
 	timer       Timer
 	midias      *Midias
+	clima       *Clima
+	conectados  atomic.Int32 // celulares com o controle aberto
 	novidade    string
 	novidadeAte time.Time
 }
 
 func novoServidor(cfg Config, par *Pareamento, ger *Gerente) *Servidor {
-	return &Servidor{cfg: cfg, par: par, ger: ger, atu: novoAtualizador(), midias: &Midias{pasta: filepath.Join(ger.dados, "capas")}}
+	return &Servidor{cfg: cfg, par: par, ger: ger, atu: novoAtualizador(), midias: &Midias{pasta: filepath.Join(ger.dados, "capas")}, clima: novoClima(cfg.Cidade)}
 }
 
 // escutar tenta a porta por alguns segundos: depois de uma atualização a versão antiga ainda está saindo.
@@ -317,6 +320,8 @@ func (s *Servidor) estadoTV(w http.ResponseWriter, r *http.Request) {
 		"volumeIntro": s.cfg.volumeIntro(),
 		"timer":       s.timer.Restante(),
 		"videos":      s.midias.IDs(),
+		"clima":       s.clima.Atual(),
+		"conectados":  s.conectados.Load(),
 		"videosFundo": s.cfg.videosFundo(),
 		"sons":        s.cfg.sons(),
 		"protetorMin": s.cfg.protetorMin(),
@@ -404,6 +409,8 @@ func (s *Servidor) controle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer c.Close()
+	s.conectados.Add(1)
+	defer s.conectados.Add(-1)
 	c.SetReadLimit(8192)
 	for {
 		var m Msg

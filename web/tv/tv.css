@@ -87,7 +87,7 @@ kbd { font-family: inherit; padding: .15vw .5vw; border-radius: .35vw; backgroun
 .botao { padding: 1vw 3vw; border-radius: 99vw; font-size: 1.4vw; font-weight: 600; background: rgba(255,255,255,.1); outline: .2vw solid transparent; }
 .botao.foco { background: #fff; color: #000; transform: scale(1.08); }
 
-.abrindo { background: #000; }
+.abrindo { background: #000 center / cover no-repeat; }
 .giro { width: 4vw; height: 4vw; margin: 0 auto 1.6vw; border-radius: 50%; border: .4vw solid rgba(255,255,255,.2); border-top-color: #fff; animation: gira .8s linear infinite; }
 @keyframes gira { to { transform: rotate(360deg); } }
 
@@ -141,3 +141,6 @@ video.arte { width: 100%; height: 100%; object-fit: cover; object-position: righ
   background: linear-gradient(90deg, rgba(6,7,11,.9) 0%, rgba(6,7,11,.55) 40%, rgba(6,7,11,.15) 75%); }
 #fundo.com-video::before { opacity: 1; }
 #fundo::after { z-index: 1; }
+
+.clima { align-self: center; font-size: 1.5vw; color: var(--texto); margin-right: .4vw; }
+.clima small { font-size: 1vw; color: var(--suave); margin-left: .5vw; }

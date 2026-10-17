@@ -95,7 +95,7 @@ function botaoRepete(el, acao) {
   el.addEventListener('contextmenu', e => e.preventDefault());
 }
 
-$$('[data-tecla]').forEach(b => botaoRepete(b, () => enviar({ t: 'tecla', k: b.dataset.tecla })));
+$$('[data-tecla]').forEach(b => botaoRepete(b, () => { enviar({ t: 'tecla', k: b.dataset.tecla }); if (b.dataset.tecla === 'ok') vibrar(25); }));
 $$('[data-acao="inicio"], #btn-inicio-topo').forEach(b => botaoRepete(b, () => enviar({ t: 'inicio' })));
 $$('[data-clique]').forEach(b => botaoRepete(b, () => enviar({ t: 'clique', k: b.dataset.clique })));
 $$('[data-sistema]').forEach(b => b.onclick = () => {
@@ -182,6 +182,42 @@ $$('[data-timer]').forEach(b => b.onclick = () => {
   setTimeout(() => ws && ws.readyState === 1 && ws.send(JSON.stringify({ t: 'ping', id: Date.now() })), 150);
 });
 
+// ---------- Gestos: deslizar = setas, toque = OK, segurar = voltar ----------
+(() => {
+  const area = $('#gestos'), seta = $('#gestos-seta');
+  const PASSO = 45; // pixels de deslize para cada seta
+  let ini = null, moveu = false, tSegurar = null;
+  const mostrarSeta = txt => { seta.textContent = txt; seta.classList.add('ver'); clearTimeout(mostrarSeta.t); mostrarSeta.t = setTimeout(() => seta.classList.remove('ver'), 160); };
+  area.addEventListener('pointerdown', e => {
+    area.setPointerCapture(e.pointerId);
+    ini = { x: e.clientX, y: e.clientY }; moveu = false;
+    tSegurar = setTimeout(() => { if (!moveu) { enviar({ t: 'tecla', k: 'voltar' }); vibrar(40); mostrarSeta('↩'); ini = null; } }, 550);
+  });
+  area.addEventListener('pointermove', e => {
+    if (!ini) return;
+    const dx = e.clientX - ini.x, dy = e.clientY - ini.y;
+    if (Math.max(Math.abs(dx), Math.abs(dy)) < PASSO) return;
+    moveu = true; clearTimeout(tSegurar);
+    const [k, s] = Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? ['direita', '→'] : ['esquerda', '←']) : (dy > 0 ? ['baixo', '↓'] : ['cima', '↑']);
+    enviar({ t: 'tecla', k }); vibrar(8); mostrarSeta(s);
+    ini = { x: e.clientX, y: e.clientY }; // continuar deslizando anda mais
+  });
+  const fim = () => {
+    clearTimeout(tSegurar);
+    if (ini && !moveu) { enviar({ t: 'tecla', k: 'ok' }); vibrar(25); mostrarSeta('●'); }
+    ini = null;
+  };
+  area.addEventListener('pointerup', fim);
+  area.addEventListener('pointercancel', () => { clearTimeout(tSegurar); ini = null; });
+})();
+
+// ---------- Tela do celular acesa enquanto o controle está aberto ----------
+let travaTela = null;
+async function manterTelaAcesa() {
+  try { if ('wakeLock' in navigator && !document.hidden) travaTela = await navigator.wakeLock.request('screen'); } catch (_) {}
+}
+document.addEventListener('visibilitychange', () => { if (!document.hidden) manterTelaAcesa(); });
+
 // ---------- Apps ----------
 async function carregarApps() {
   try {
@@ -204,7 +240,8 @@ async function carregarApps() {
 // ---------- Abas ----------
 function trocarAba(nome) {
   $$('.abas button').forEach(b => b.classList.toggle('ativa', b.dataset.aba === nome));
-  ['controle', 'touch', 'apps'].forEach(n => $('#aba-' + n).classList.toggle('oculto', n !== nome));
+  ['controle', 'gestos', 'touch', 'apps'].forEach(n => $('#aba-' + n).classList.toggle('oculto', n !== nome));
+  try { localStorage.setItem('aba', nome); } catch (_) {}
   if (nome === 'apps') carregarApps();
 }
 $$('.abas button').forEach(b => b.onclick = () => trocarAba(b.dataset.aba));
@@ -229,6 +266,9 @@ async function iniciar() {
   }
   tela('controle');
   conectar();
+  manterTelaAcesa();
+  let aba = null; try { aba = localStorage.getItem('aba'); } catch (_) {}
+  if (aba && aba !== 'apps' && $('#aba-' + aba)) trocarAba(aba); // volta na última aba usada
   carregarApps(); // para saber o nome do app que está na TV
 }
 

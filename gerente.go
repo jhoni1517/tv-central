@@ -13,7 +13,7 @@ import (
 	"time"
 )
 
-const portaDepuracao = 9222
+const portaDepuracao = 39222 // pouco usada por outros programas
 
 // Gerente abre e fecha os apps e mantém o launcher.
 type Gerente struct {
