@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="theme-color" content="#0b0c11">
+<title>TV Central</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icone-192.png">
+<link rel="apple-touch-icon" href="icone-192.png">
+<link rel="stylesheet" href="app.css">
+</head>
+<body>
+
+<!-- Pareamento -->
+<section id="tela-parear" class="tela oculto">
+  <div class="parear">
+    <div class="logo"><span class="ponto"></span>TV Central</div>
+    <h1>Conectar à TV</h1>
+    <p>Toque no botão: um código vai aparecer na TV.</p>
+    <button id="pedir-codigo" class="primario">Mostrar código na TV</button>
+    <form id="form-codigo">
+      <input id="codigo" inputmode="numeric" pattern="[0-9]*" maxlength="6" placeholder="000000" autocomplete="one-time-code">
+      <button class="primario" type="submit">Conectar</button>
+    </form>
+    <p id="erro-parear" class="erro"></p>
+  </div>
+</section>
+
+<!-- Controle -->
+<section id="tela-controle" class="tela oculto">
+  <header class="topo">
+    <div class="logo"><span id="status" class="ponto"></span>TV Central</div>
+    <button id="btn-inicio-topo" class="redondo pequeno" aria-label="Tela inicial">⌂</button>
+  </header>
+
+  <div id="aba-controle" class="aba">
+    <form id="form-texto" class="texto">
+      <input id="campo-texto" placeholder="Digitar na TV…" autocomplete="off" enterkeyhint="send">
+      <button type="button" id="btn-voz" class="redondo pequeno oculto" aria-label="Falar">🎤</button>
+      <button type="button" class="redondo pequeno" data-tecla="apagar" data-repete aria-label="Apagar">⌫</button>
+    </form>
+
+    <div class="dpad">
+      <button class="seta cima" data-tecla="cima" data-repete aria-label="Cima"><i></i></button>
+      <button class="seta esquerda" data-tecla="esquerda" data-repete aria-label="Esquerda"><i></i></button>
+      <button class="ok" data-tecla="ok">OK</button>
+      <button class="seta direita" data-tecla="direita" data-repete aria-label="Direita"><i></i></button>
+      <button class="seta baixo" data-tecla="baixo" data-repete aria-label="Baixo"><i></i></button>
+    </div>
+
+    <div class="grade">
+      <button class="redondo" data-tecla="voltar" aria-label="Voltar">↩<small>Voltar</small></button>
+      <button class="redondo" data-acao="inicio" aria-label="Início">⌂<small>Início</small></button>
+      <button class="redondo" data-tecla="playpause" aria-label="Play/Pausa">⏯<small>Play</small></button>
+      <button class="redondo" data-tecla="volmenos" data-repete aria-label="Volume menos">−<small>Vol</small></button>
+      <button class="redondo" data-tecla="mudo" aria-label="Mudo">🔇<small>Mudo</small></button>
+      <button class="redondo" data-tecla="volmais" data-repete aria-label="Volume mais">+<small>Vol</small></button>
+    </div>
+  </div>
+
+  <div id="aba-touch" class="aba oculto">
+    <div id="touchpad"><span>Arraste para mover · toque para clicar · dois dedos para rolar</span></div>
+    <div class="cliques">
+      <button data-clique="esquerdo">Clique</button>
+      <button data-clique="direito">Botão direito</button>
+    </div>
+  </div>
+
+  <div id="aba-apps" class="aba oculto">
+    <div id="lista-apps" class="apps"></div>
+    <div class="sistema">
+      <button data-sistema="reiniciar">Reiniciar PC</button>
+      <button data-sistema="desligar">Desligar PC</button>
+    </div>
+  </div>
+
+  <nav class="abas">
+    <button class="ativa" data-aba="controle">🎮<span>Controle</span></button>
+    <button data-aba="touch">🖱️<span>Touchpad</span></button>
+    <button data-aba="apps">▦<span>Apps</span></button>
+  </nav>
+</section>
+
+<script src="app.js"></script>
+</body>
+</html>

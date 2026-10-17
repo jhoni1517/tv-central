@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TV Central</title>
+<link rel="stylesheet" href="tv.css">
+</head>
+<body>
+<div id="fundo"></div>
+
+<header>
+  <div class="marca"><span class="ponto"></span>TV Central</div>
+  <div class="hora"><span id="relogio">--:--</span><span id="data"></span></div>
+</header>
+
+<main>
+  <section class="destaque">
+    <h1 id="titulo">Boa noite</h1>
+    <p id="subtitulo">Escolha o que assistir</p>
+  </section>
+
+  <section class="linha" data-linha="0">
+    <h2>Assistir</h2>
+    <div class="cartoes" id="apps"></div>
+  </section>
+
+  <section class="linha" data-linha="1">
+    <h2>Sistema</h2>
+    <div class="cartoes pequenos" id="sistema">
+      <button class="cartao sis" data-acao="celular"><span class="icone">📱</span><span>Conectar celular</span></button>
+      <button class="cartao sis" data-acao="reiniciar"><span class="icone">↻</span><span>Reiniciar</span></button>
+      <button class="cartao sis" data-acao="desligar"><span class="icone">⏻</span><span>Desligar</span></button>
+    </div>
+  </section>
+</main>
+
+<aside id="qr" class="cartao-qr oculto">
+  <img alt="QR code do controle" src="qr.png">
+  <div>
+    <strong>Controle pelo celular</strong>
+    <p>Na mesma Wi-Fi, aponte a câmera do celular ou abra:</p>
+    <code id="endereco"></code>
+  </div>
+</aside>
+
+<footer>
+  <span><kbd>← → ↑ ↓</kbd> navegar</span>
+  <span><kbd>OK</kbd> abrir</span>
+  <span><kbd>Início</kbd> no celular volta aqui</span>
+</footer>
+
+<div id="pareamento" class="sobre oculto">
+  <div class="caixa">
+    <p>Digite no celular o código</p>
+    <div id="codigo" class="codigo"></div>
+    <small>Vale por 3 minutos</small>
+  </div>
+</div>
+
+<div id="confirmar" class="sobre oculto">
+  <div class="caixa">
+    <p id="confirmar-texto">Desligar o computador?</p>
+    <div class="botoes">
+      <button class="botao" data-sim>Sim</button>
+      <button class="botao" data-nao>Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<div id="abrindo" class="sobre abrindo oculto">
+  <div class="caixa"><div class="giro"></div><p id="abrindo-texto">Abrindo…</p></div>
+</div>
+
+<script src="tv.js"></script>
+</body>
+</html>

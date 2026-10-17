@@ -1,0 +1,35 @@
+name: build
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - run: go vet ./... && GOOS=windows go vet ./...
+      - name: Compilar para Windows
+        run: |
+          VERSAO="${GITHUB_REF_NAME#v}"
+          GOOS=windows GOARCH=amd64 go build -trimpath \
+            -ldflags "-H windowsgui -s -w -X main.versao=${VERSAO}" -o dist/TVCentral.exe .
+      - uses: actions/upload-artifact@v4
+        with:
+          name: TVCentral
+          path: dist/TVCentral.exe
+      - name: Publicar release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/TVCentral.exe
+          generate_release_notes: true

@@ -1,0 +1,123 @@
+package main
+
+import (
+	"encoding/json"
+	"errors"
+	"os"
+	"path/filepath"
+)
+
+// App é um item da tela inicial.
+type App struct {
+	ID        string   `json:"id"`
+	Nome      string   `json:"nome"`
+	Tipo      string   `json:"tipo"`    // "web" (abre no Edge em tela cheia) ou "programa" (.exe)
+	Destino   string   `json:"destino"` // endereço do site ou caminho do .exe
+	Args      []string `json:"args,omitempty"`
+	Cor       string   `json:"cor"`
+	Cor2      string   `json:"cor2,omitempty"`
+	UserAgent string   `json:"userAgent,omitempty"`
+	Perfil    string   `json:"perfil,omitempty"` // perfil do navegador (logins ficam salvos nele)
+	Setas     *bool    `json:"setas,omitempty"`  // navegação por setas injetada no site
+	Oculto    bool     `json:"oculto,omitempty"`
+}
+
+func (a App) usaSetas() bool {
+	if a.Setas != nil {
+		return *a.Setas
+	}
+	return a.Tipo == "web"
+}
+
+func falso() *bool { b := false; return &b }
+
+// YouTube tem interface de TV própria quando o navegador se apresenta como Smart TV.
+const uaSmartTV = "Mozilla/5.0 (SMART-TV; Linux; Tizen 6.0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/94.0.4606.31 TV Safari/537.36"
+
+var appsPadrao = []App{
+	{ID: "netflix", Nome: "Netflix", Tipo: "web", Destino: "https://www.netflix.com/browse", Cor: "#E50914", Cor2: "#3d0205"},
+	{ID: "hbomax", Nome: "HBO Max", Tipo: "web", Destino: "https://play.hbomax.com", Cor: "#7B2FF7", Cor2: "#1b0a3d"},
+	{ID: "disney", Nome: "Disney+", Tipo: "web", Destino: "https://www.disneyplus.com", Cor: "#0063E5", Cor2: "#0b1a4a"},
+	{ID: "appletv", Nome: "Apple TV", Tipo: "web", Destino: "https://tv.apple.com", Cor: "#5c5c66", Cor2: "#111114"},
+	{ID: "youtube", Nome: "YouTube", Tipo: "web", Destino: "https://www.youtube.com/tv", Cor: "#FF0033", Cor2: "#7a0019", UserAgent: uaSmartTV, Perfil: "youtube", Setas: falso()},
+	{ID: "prime", Nome: "Prime Video", Tipo: "web", Destino: "https://www.primevideo.com", Cor: "#1A98FF", Cor2: "#0a2a4a"},
+	{ID: "globoplay", Nome: "Globoplay", Tipo: "web", Destino: "https://globoplay.globo.com", Cor: "#F25C2B", Cor2: "#4a1406"},
+}
+
+type Config struct {
+	Porta         int               `json:"porta"`
+	AbrirLauncher *bool             `json:"abrirLauncher,omitempty"`
+	Apps          []json.RawMessage `json:"apps"`
+	apps          []App
+}
+
+func (c Config) abrirLauncher() bool { return c.AbrirLauncher == nil || *c.AbrirLauncher }
+
+const exemploConfig = `{
+  "porta": 8765,
+  "abrirLauncher": true,
+  "apps": []
+}
+`
+
+// carregarConfig lê config.json. Cada item de "apps" com o mesmo id de um padrão
+// altera só os campos informados (ex.: {"id":"prime","oculto":true}); ids novos viram apps novos.
+func carregarConfig(dados string) (Config, error) {
+	cfg := Config{Porta: 8765}
+	arq := filepath.Join(dados, "config.json")
+	b, err := os.ReadFile(arq)
+	if errors.Is(err, os.ErrNotExist) {
+		_ = os.WriteFile(arq, []byte(exemploConfig), 0o644)
+		b, err = []byte(exemploConfig), nil
+	}
+	var errLeitura error
+	if err == nil {
+		errLeitura = json.Unmarshal(b, &cfg)
+	} else {
+		errLeitura = err
+	}
+	if cfg.Porta == 0 {
+		cfg.Porta = 8765
+	}
+	cfg.apps = juntarApps(appsPadrao, cfg.Apps)
+	return cfg, errLeitura
+}
+
+func juntarApps(padrao []App, extras []json.RawMessage) []App {
+	lista := append([]App(nil), padrao...)
+	for _, raw := range extras {
+		var cab struct {
+			ID string `json:"id"`
+		}
+		if json.Unmarshal(raw, &cab) != nil || cab.ID == "" {
+			continue
+		}
+		achou := false
+		for i := range lista {
+			if lista[i].ID == cab.ID {
+				_ = json.Unmarshal(raw, &lista[i])
+				achou = true
+				break
+			}
+		}
+		if !achou {
+			var a App
+			if json.Unmarshal(raw, &a) == nil && a.Destino != "" {
+				if a.Tipo == "" {
+					a.Tipo = "web"
+				}
+				if a.Cor == "" {
+					a.Cor = "#3a3a48"
+				}
+				lista = append(lista, a)
+			}
+		}
+	}
+	vis := lista[:0]
+	for _, a := range lista {
+		if !a.Oculto {
+			vis = append(vis, a)
+		}
+	}
+	return vis
+}
