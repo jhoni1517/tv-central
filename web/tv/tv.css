@@ -88,3 +88,4 @@ kbd { font-family: inherit; padding: .15vw .5vw; border-radius: .35vw; backgroun
 /* Cursor do mouse visível em tudo enquanto ele estiver sendo usado */
 body.com-mouse, body.com-mouse * { cursor: default !important; }
 body.com-mouse .cartao, body.com-mouse .botao { cursor: pointer !important; }
+.logo-ic { width: 2.1vw; height: 2.1vw; }
