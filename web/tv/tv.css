@@ -144,3 +144,17 @@ video.arte { width: 100%; height: 100%; object-fit: cover; object-position: righ
 
 .clima { align-self: center; font-size: 1.5vw; color: var(--texto); margin-right: .4vw; }
 .clima small { font-size: 1vw; color: var(--suave); margin-left: .5vw; }
+
+/* ---------- Perfis e modo criança ---------- */
+.perfil-chip { align-self: center; display: flex; align-items: center; gap: .6vw; font-size: 1.1vw; margin-right: .6vw; }
+.perfil-chip .av { width: 2.2vw; height: 2.2vw; border-radius: .7vw; display: grid; place-items: center; font-size: 1.3vw; }
+.perfil-chip.crianca { background: #f5c542; color: #1a1300; padding: .35vw 1vw; border-radius: 99vw; font-weight: 700; }
+.quem { background: #06070b; }
+.quem-titulo { font-size: 3vw !important; font-weight: 700; margin-bottom: 3vw !important; }
+.quem-lista { display: flex; gap: 3vw; justify-content: center; }
+.quem-item { display: flex; flex-direction: column; align-items: center; gap: 1.2vw; font-size: 1.5vw; color: var(--suave); }
+.quem-item .av { width: 11vw; height: 11vw; border-radius: 2.4vw; display: grid; place-items: center; font-size: 6vw; outline: .35vw solid transparent; outline-offset: .5vw; transition: transform .15s ease-out; }
+.quem-item.foco { color: #fff; }
+.quem-item.foco .av { outline-color: #fff; transform: scale(1.08); }
+body.modo-crianca .linha[data-linha="1"] { display: none; }
+.quem-item .av, .perfil-chip .av { color: #fff; } /* cor com transparência apagava o emoji */

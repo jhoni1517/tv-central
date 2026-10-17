@@ -2,7 +2,7 @@
 const $ = s => document.querySelector(s);
 const linhas = [[], []];
 let pos = { linha: 0, col: 0 };
-let modal = null; // 'confirmar' quando a caixa de confirmação está aberta
+let modal = null; // 'confirmar' (caixa de confirmação) ou 'perfil' (quem está assistindo)
 let confirmarAcao = null;
 let appsJson = '';
 let versaoInicial = null;
@@ -47,7 +47,7 @@ function montarApps(apps) {
     caixa.append(b);
   }
   linhas[0] = [...caixa.children];
-  linhas[1] = [...$('#sistema').children];
+  linhas[1] = sistemaVisivel();
   let ultimo = null;
   try { ultimo = localStorage.getItem('ultimo-app'); } catch (_) {}
   const i = linhas[0].findIndex(b => b.dataset.id === ultimo);
@@ -160,6 +160,41 @@ function mover(dl, dc) {
   focar();
 }
 
+// Botões de sistema que estão aparecendo (alguns somem conforme o perfil / modo criança)
+function sistemaVisivel() {
+  if (document.body.classList.contains('modo-crianca')) return [];
+  return [...$('#sistema').children].filter(b => !b.classList.contains('oculto'));
+}
+
+// ---------- Quem está assistindo ----------
+let perfis = [], perfilAtualId = null, focoPerfil = 0;
+function abrirPerfis() {
+  if (!perfis.length) return;
+  modal = 'perfil';
+  focoPerfil = Math.max(0, perfis.findIndex(p => p.id === perfilAtualId));
+  const lista = $('#quem-lista');
+  lista.replaceChildren(...perfis.map((p, i) => {
+    const item = document.createElement('button');
+    item.className = 'quem-item';
+    const av = document.createElement('span');
+    av.className = 'av'; av.style.background = p.cor; av.textContent = p.emoji;
+    item.append(av, document.createTextNode(p.nome));
+    item.onclick = () => { focoPerfil = i; escolherPerfil(); };
+    item.onmousemove = () => { focoPerfil = i; pintarPerfis(); };
+    return item;
+  }));
+  mostrar('#quem', true);
+  pintarPerfis();
+}
+function pintarPerfis() { [...$('#quem-lista').children].forEach((el, i) => el.classList.toggle('foco', i === focoPerfil)); }
+async function escolherPerfil() {
+  const p = perfis[focoPerfil];
+  modal = null; mostrar('#quem', false); Som.ok();
+  if (p.id === perfilAtualId) return;
+  try { await post('api/perfil', { id: p.id }); aviso(`${p.emoji} Olá, ${p.nome}!`, 2500); estado(); }
+  catch (e) { aviso('Não deu: ' + e.message); }
+}
+
 async function post(url, corpo) {
   const r = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(corpo) });
   if (!r.ok) throw new Error((await r.json().catch(() => ({}))).erro || r.statusText);
@@ -183,6 +218,7 @@ async function ativar() {
   const acao = el.dataset.acao;
   if (acao === 'celular') { $('#qr').classList.toggle('oculto'); return; }
   if (acao === 'timer') { proximoTimer(); return; }
+  if (acao === 'perfil') { abrirPerfis(); return; }
   if (acao === 'desktop') {
     aviso('Indo para a área de trabalho. Aperte Início no celular para voltar.', 3000);
     setTimeout(() => post('api/desktop', {}).catch(() => {}), 800);
@@ -212,6 +248,13 @@ function pintarModal() { botoesModal().forEach((b, i) => b.classList.toggle('foc
 document.addEventListener('keydown', async e => {
   const k = e.key === 'BrowserBack' || e.key === 'GoBack' ? 'Escape' : e.key;
   if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Enter', 'Escape', ' '].includes(k)) e.preventDefault();
+  if (modal === 'perfil') {
+    if (k === 'ArrowLeft') { focoPerfil = Math.max(0, focoPerfil - 1); Som.mover(); pintarPerfis(); }
+    else if (k === 'ArrowRight') { focoPerfil = Math.min(perfis.length - 1, focoPerfil + 1); Som.mover(); pintarPerfis(); }
+    else if (k === 'Enter' || k === ' ') escolherPerfil();
+    else if (k === 'Escape') { modal = null; mostrar('#quem', false); Som.voltar(); }
+    return;
+  }
   if (modal) {
     if (k === 'ArrowLeft' || k === 'ArrowRight') { focoModal = 1 - focoModal; pintarModal(); }
     else if (k === 'Escape' || k === 'Backspace') fecharModal();
@@ -283,8 +326,30 @@ async function estado() {
     if (s.novidade && !sessionStorage.getItem('aviso-' + s.versao)) { sessionStorage.setItem('aviso-' + s.versao, '1'); aviso(s.novidade, 8000); }
     if (s.atualizacao && s.atualizacao !== estado.ultimoStatus) aviso(s.atualizacao);
     estado.ultimoStatus = s.atualizacao;
-    const j = JSON.stringify(s.apps);
+    // Perfil atual / modo criança
+    const crianca = !!s.crianca;
+    document.body.classList.toggle('modo-crianca', crianca);
+    perfis = s.perfis || []; perfilAtualId = s.perfil && s.perfil.id;
+    const chip = $('#perfil-chip');
+    chip.classList.toggle('crianca', crianca);
+    if (crianca) chip.textContent = '🧸 Modo criança';
+    else if (s.perfil && perfis.length > 1) {
+      const av = document.createElement('span'); av.className = 'av'; av.style.background = s.perfil.cor; av.textContent = s.perfil.emoji;
+      chip.replaceChildren(av, document.createTextNode(s.perfil.nome));
+    }
+    mostrar('#perfil-chip', crianca || perfis.length > 1);
+    $('#sistema [data-acao="perfil"]').classList.toggle('oculto', crianca || perfis.length < 2);
+    const dica = $('#rodape').lastElementChild;
+    dica.firstElementChild.style.display = crianca ? 'none' : '';
+    dica.lastChild.textContent = crianca ? 'Para sair do modo criança, use o celular' : ' no celular volta aqui';
+    const j = JSON.stringify(s.apps) + crianca + perfis.length;
     if (j !== appsJson) { appsJson = j; montarApps(s.apps); }
+    // "Quem está assistindo?" ao ligar (depois da abertura)
+    if (!estado.perguntou && s.perguntarPerfil && perfis.length > 1 && !crianca && !sessionStorage.getItem('perfil-perguntado')) {
+      estado.perguntou = true;
+      sessionStorage.setItem('perfil-perguntado', '1');
+      (function esperarIntro() { document.getElementById('intro') ? setTimeout(esperarIntro, 300) : abrirPerfis(); })();
+    }
     const end = (s.enderecos || [])[0] || '';
     if (end !== estado.end) { estado.end = end; $('#qr img').src = 'qr.png?e=' + encodeURIComponent(end); }
     $('#endereco').textContent = end || 'sem rede: conecte o Wi-Fi';
@@ -390,7 +455,7 @@ setInterval(() => {
 
 relogio();
 setInterval(relogio, 5000);
-linhas[1] = [...$('#sistema').children];
+linhas[1] = sistemaVisivel();
 // Com a tela inicial na frente: atualiza a cada 1,5 s. Com um app aberto: a cada 6 s (economiza).
 (function laco() {
   estado();

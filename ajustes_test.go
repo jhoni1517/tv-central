@@ -22,7 +22,11 @@ func TestPerfisEModoCrianca(t *testing.T) {
 		t.Fatalf("padrão: %v", vis)
 	}
 	// ordem e ocultos
-	_ = c.Mudar(func(a *Ajustes) error { a.Ordem = []string{"youtube", "netflix"}; a.Ocultos = []string{"prime"}; return nil })
+	_ = c.Mudar(func(a *Ajustes) error {
+		a.Ordem = []string{"youtube", "netflix"}
+		a.Ocultos = []string{"prime"}
+		return nil
+	})
 	vis = ids(appsVisiveis(appsPadrao, c.Ler()))
 	if vis[0] != "youtube" || vis[1] != "netflix" || contem(vis, "prime") || !contem(vis, "youtubekids") {
 		t.Fatalf("ordem/ocultos: %v", vis)

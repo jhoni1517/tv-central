@@ -12,7 +12,7 @@
 
 <header>
   <div class="marca"><img class="logo-ic" src="icone.png" alt="">TV Central</div>
-  <div class="hora"><span id="cel-chip" class="chip oculto" title="Celulares conectados"></span><span id="timer-chip" class="chip oculto"></span><span id="clima" class="clima oculto"></span><span id="relogio">--:--</span><span id="data"></span></div>
+ <div class="hora"><span id="perfil-chip" class="perfil-chip oculto"></span><span id="cel-chip" class="chip oculto" title="Celulares conectados"></span><span id="timer-chip" class="chip oculto"></span><span id="clima" class="clima oculto"></span><span id="relogio">--:--</span><span id="data"></span></div>
 </header>
 
 <main>
@@ -30,6 +30,7 @@
   <section class="linha" data-linha="1">
     <h2>Sistema</h2>
     <div class="cartoes pequenos" id="sistema">
+      <button class="cartao sis oculto" data-acao="perfil"><span class="icone">👥</span><span>Trocar perfil</span></button>
       <button class="cartao sis" data-acao="celular"><span class="icone">📱</span><span>Conectar celular</span></button>
       <button class="cartao sis" data-acao="reiniciar"><span class="icone">↻</span><span>Reiniciar</span></button>
       <button class="cartao sis" data-acao="desligar"><span class="icone">⏻</span><span>Desligar</span></button>
@@ -49,7 +50,7 @@
   </div>
 </aside>
 
-<footer>
+<footer id="rodape">
   <span><kbd>← → ↑ ↓</kbd> navegar</span>
   <span><kbd>OK</kbd> abrir</span>
   <span><kbd>Início</kbd> no celular volta aqui</span>
@@ -74,6 +75,13 @@
 </div>
 
 <div id="aviso" class="aviso oculto"></div>
+
+<div id="quem" class="sobre quem oculto">
+  <div class="caixa">
+    <p class="quem-titulo">Quem está assistindo?</p>
+    <div id="quem-lista" class="quem-lista"></div>
+  </div>
+</div>
 
 <div id="protetor" class="protetor oculto">
   <div class="arte" id="prot-a"></div><div class="arte" id="prot-b"></div>
