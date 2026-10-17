@@ -125,9 +125,12 @@ func rodar(op Opcoes) {
 		}
 	}()
 
-	if !(op.LauncherPID > 0 && ger.AdotarLauncher(op.LauncherPID)) && cfg.abrirLauncher() {
+	// Reaproveita a tela inicial e o app que já estavam abertos (atualização ou reinício do programa)
+	ger.AdotarApp(cfg.apps)
+	if !ger.AdotarLauncher(op.LauncherPID) && cfg.abrirLauncher() {
 		go ger.AbrirLauncher()
 	}
+	atalhosGlobais(ger.Inicio)
 	if cfg.atualizarAuto() {
 		go srv.atu.Loop(dados, ger)
 	}

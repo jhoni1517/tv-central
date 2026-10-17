@@ -41,4 +41,6 @@ func trocarPrograma(novo string, launcherPID int) error {
 	return errors.New("atualização automática só no Windows")
 }
 
-func voltarVersaoAnterior() bool { return false }
+func voltarVersaoAnterior() bool   { return false }
+func ehNavegador(pid int) bool     { return processoVivo(pid) }
+func atalhosGlobais(inicio func()) {}

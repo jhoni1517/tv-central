@@ -49,7 +49,7 @@ function montarApps(apps) {
   focar();
 }
 
-function focar() {
+function focar(peloMouse) {
   document.querySelectorAll('.cartao.foco').forEach(e => e.classList.remove('foco'));
   const el = linhas[pos.linha][pos.col];
   if (!el) return;
@@ -59,8 +59,10 @@ function focar() {
   const visivel = innerWidth - fila.parentElement.getBoundingClientRect().left - innerWidth * 0.09;
   const ini = el.offsetLeft - fila.offsetLeft, fim = ini + el.offsetWidth;
   let x = fila._x || 0;
-  if (fim - x > visivel) x = fim - visivel;
-  if (ini - x < 0) x = ini;
+  if (!peloMouse) { // com mouse a linha não pula: o cartão já está embaixo do cursor
+    if (fim - x > visivel) x = fim - visivel;
+    if (ini - x < 0) x = ini;
+  }
   fila._x = x;
   fila.style.transform = `translateX(${-x}px)`;
   const raiz = document.documentElement.style;
@@ -161,7 +163,18 @@ document.addEventListener('click', e => {
   const b = e.target.closest('#confirmar .botao');
   if (b) { focoModal = botoesModal().indexOf(b); document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' })); }
 });
-document.addEventListener('mousemove', () => { document.body.style.cursor = 'default'; clearTimeout(window.__cur); window.__cur = setTimeout(() => (document.body.style.cursor = 'none'), 2500); });
+// Mouse: o cursor aparece ao mexer (inclusive em cima dos cartões) e some depois de parado.
+// Passar o mouse por cima de um cartão já seleciona ele.
+document.addEventListener('mousemove', e => {
+  document.body.classList.add('com-mouse');
+  clearTimeout(window.__cur);
+  window.__cur = setTimeout(() => document.body.classList.remove('com-mouse'), 4000);
+  const c = e.target.closest && e.target.closest('.cartao');
+  if (c && !modal) {
+    linhas.forEach((l, li) => { const i = l.indexOf(c); if (i >= 0 && (pos.linha !== li || pos.col !== i)) { pos = { linha: li, col: i }; focar(true); } });
+  }
+});
+document.addEventListener('keydown', () => document.body.classList.remove('com-mouse'), true);
 
 async function estado() {
   try {

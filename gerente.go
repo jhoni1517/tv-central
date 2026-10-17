@@ -8,6 +8,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 )
@@ -19,7 +20,7 @@ type Gerente struct {
 	mu           sync.Mutex
 	dados        string
 	porta        int
-	atual        *exec.Cmd
+	atual        *os.Process
 	atualID      string
 	cancelar     context.CancelFunc
 	launcherPID  int
@@ -111,6 +112,7 @@ func (g *Gerente) AbrirLauncher() {
 // vigiarLauncher marca o launcher como aberto até o processo terminar. Chame com g.mu travado.
 func (g *Gerente) vigiarLauncher(p *os.Process) {
 	g.launcherPID, g.launcherVivo = p.Pid, true
+	_ = os.WriteFile(filepath.Join(g.dados, "launcher.pid"), []byte(strconv.Itoa(p.Pid)), 0o644)
 	go func() {
 		_, _ = p.Wait()
 		g.mu.Lock()
@@ -123,8 +125,13 @@ func (g *Gerente) vigiarLauncher(p *os.Process) {
 }
 
 // AdotarLauncher assume a tela inicial aberta pela versão anterior (depois de uma atualização).
+// Também serve depois de reiniciar o programa: o PID fica salvo em launcher.pid.
 func (g *Gerente) AdotarLauncher(pid int) bool {
-	if pid <= 0 || !processoVivo(pid) {
+	if pid <= 0 {
+		b, _ := os.ReadFile(filepath.Join(g.dados, "launcher.pid"))
+		pid, _ = strconv.Atoi(strings.TrimSpace(string(b)))
+	}
+	if pid <= 0 || !processoVivo(pid) || !ehNavegador(pid) {
 		return false
 	}
 	p, err := os.FindProcess(pid)
@@ -180,23 +187,30 @@ func (g *Gerente) Abrir(app App) error {
 	if err := cmd.Start(); err != nil {
 		return err
 	}
+	log.Printf("abriu %s (pid %d)", app.ID, cmd.Process.Pid)
+	g.vigiarApp(cmd.Process, app)
+	go focarProcesso(cmd.Process.Pid)
+	return nil
+}
+
+// vigiarApp acompanha o app aberto e volta para a tela inicial quando ele fechar. Chame com g.mu travado.
+func (g *Gerente) vigiarApp(p *os.Process, app App) {
 	inicio := time.Now()
-	g.atual, g.atualID = cmd, app.ID
+	g.atual, g.atualID = p, app.ID
 	ctx, cancel := context.WithCancel(context.Background())
 	g.cancelar = cancel
-	log.Printf("abriu %s (pid %d)", app.ID, cmd.Process.Pid)
-
+	_ = os.WriteFile(filepath.Join(g.dados, "app.pid"), []byte(app.ID+" "+strconv.Itoa(p.Pid)), 0o644)
 	if app.Tipo != "programa" && app.usaSetas() {
 		go injetarSetas(ctx, portaDepuracao, scriptSetas())
 	}
-	go focarProcesso(cmd.Process.Pid)
 	go func() {
-		_ = cmd.Wait()
+		_, _ = p.Wait()
 		cancel()
 		g.mu.Lock()
-		eraAtual := g.atual == cmd
+		eraAtual := g.atual == p
 		if eraAtual {
 			g.atual, g.atualID = nil, ""
+			_ = os.Remove(filepath.Join(g.dados, "app.pid"))
 		}
 		g.mu.Unlock()
 		// Saiu logo de cara: o navegador só repassou para uma janela já aberta.
@@ -205,21 +219,45 @@ func (g *Gerente) Abrir(app App) error {
 			g.AbrirLauncher()
 		}
 	}()
-	return nil
+}
+
+// AdotarApp retoma o app que estava aberto antes do programa reiniciar (ex.: depois de atualizar).
+func (g *Gerente) AdotarApp(apps []App) {
+	b, err := os.ReadFile(filepath.Join(g.dados, "app.pid"))
+	if err != nil {
+		return
+	}
+	var id string
+	var pid int
+	if _, err := fmt.Sscanf(string(b), "%s %d", &id, &pid); err != nil || !processoVivo(pid) {
+		return
+	}
+	for _, a := range apps {
+		if a.ID == id {
+			if p, err := os.FindProcess(pid); err == nil {
+				g.mu.Lock()
+				g.vigiarApp(p, a)
+				g.mu.Unlock()
+				log.Printf("app %s continua aberto (pid %d)", id, pid)
+			}
+			return
+		}
+	}
 }
 
 // Fechar encerra o app aberto (e os processos filhos).
 func (g *Gerente) Fechar() {
 	g.mu.Lock()
-	cmd, cancel := g.atual, g.cancelar
+	p, cancel := g.atual, g.cancelar
 	g.atual, g.atualID, g.cancelar = nil, "", nil
 	g.mu.Unlock()
 	if cancel != nil {
 		cancel()
 	}
-	if cmd != nil && cmd.Process != nil {
-		matarArvore(cmd.Process.Pid)
-		_ = cmd.Process.Kill()
+	if p != nil {
+		matarArvore(p.Pid)
+		_ = p.Kill()
+		_ = os.Remove(filepath.Join(g.dados, "app.pid"))
 	}
 }
 

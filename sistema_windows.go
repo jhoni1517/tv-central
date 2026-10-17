@@ -271,3 +271,19 @@ func voltarVersaoAnterior() bool {
 	}
 	return exec.Command(exe, "servidor").Start() == nil
 }
+
+// ehNavegador confere se o PID é mesmo do Edge/Chrome (o Windows reaproveita números de processo).
+func ehNavegador(pid int) bool {
+	h, err := windows.OpenProcess(windows.PROCESS_QUERY_LIMITED_INFORMATION, false, uint32(pid))
+	if err != nil {
+		return false
+	}
+	defer windows.CloseHandle(h)
+	buf := make([]uint16, windows.MAX_PATH)
+	n := uint32(len(buf))
+	if windows.QueryFullProcessImageName(h, 0, &buf[0], &n) != nil {
+		return false
+	}
+	nome := strings.ToLower(filepath.Base(windows.UTF16ToString(buf[:n])))
+	return nome == "msedge.exe" || nome == "chrome.exe"
+}

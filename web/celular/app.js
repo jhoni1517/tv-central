@@ -39,12 +39,20 @@ $('#form-codigo').onsubmit = async ev => {
 function conectar() {
   const proto = location.protocol === 'https:' ? 'wss' : 'ws';
   ws = new WebSocket(`${proto}://${location.host}/ws?token=${encodeURIComponent(token)}`);
-  ws.onopen = () => { espera = 500; $('#status').classList.add('on'); fila.splice(0).forEach(m => ws.send(m)); };
+  ws.onopen = () => {
+    espera = 500;
+    $('#status').classList.add('on');
+    $('#reconectando').classList.add('oculto');
+    fila.splice(0).forEach(m => ws.send(m));
+  };
   ws.onclose = async () => {
     $('#status').classList.remove('on');
+    $('#reconectando').classList.remove('oculto');
     try { await api('api/eu'); } catch (e) { if (e.status === 401) { localStorage.removeItem('tvc-token'); token = ''; tela('parear'); return; } }
-    setTimeout(conectar, espera);
-    espera = Math.min(espera * 2, 5000);
+    // Continua tentando para sempre (o PC pode estar atualizando ou reiniciando)
+    clearTimeout(conectar.t);
+    conectar.t = setTimeout(conectar, espera);
+    espera = Math.min(espera * 2, 3000);
   };
   ws.onmessage = ev => {
     const m = JSON.parse(ev.data);
@@ -68,9 +76,10 @@ function mostrarLatencia(ms) {
   el.className = ms < 80 ? 'boa' : ms < 250 ? 'media' : 'ruim';
 }
 setInterval(() => { if (!document.hidden && ws && ws.readyState === 1) ws.send(JSON.stringify({ t: 'ping', id: Date.now() })); }, 3000);
-document.addEventListener('visibilitychange', () => {
-  if (!document.hidden && token && (!ws || ws.readyState > 1)) conectar();
-});
+const reconectarJa = () => { if (token && (!ws || ws.readyState > 1)) { espera = 500; conectar(); } };
+document.addEventListener('visibilitychange', () => { if (!document.hidden) reconectarJa(); });
+window.addEventListener('online', reconectarJa);
+window.addEventListener('pageshow', reconectarJa);
 
 // ---------- Botões (segurar repete) ----------
 function botaoRepete(el, acao) {
