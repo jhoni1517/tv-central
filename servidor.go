@@ -229,6 +229,8 @@ func (s *Servidor) estadoTV(w http.ResponseWriter, r *http.Request) {
 		"versao":      versao,
 		"atualizacao": s.atu.Status(),
 		"novidade":    s.textoNovidade(),
+		"intro":       s.cfg.intro(),
+		"volumeIntro": s.cfg.volumeIntro(),
 	})
 }
 

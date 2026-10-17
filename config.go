@@ -48,16 +48,27 @@ type Config struct {
 	Porta         int               `json:"porta"`
 	AbrirLauncher *bool             `json:"abrirLauncher,omitempty"`
 	AtualizarAuto *bool             `json:"atualizarAuto,omitempty"`
+	Intro         *bool             `json:"intro,omitempty"`       // abertura com música ao ligar
+	VolumeIntro   *float64          `json:"volumeIntro,omitempty"` // 0 a 1 (padrão 0.5)
 	Apps          []json.RawMessage `json:"apps"`
 	apps          []App
 }
 
 func (c Config) abrirLauncher() bool { return c.AbrirLauncher == nil || *c.AbrirLauncher }
 func (c Config) atualizarAuto() bool { return c.AtualizarAuto == nil || *c.AtualizarAuto }
+func (c Config) intro() bool         { return c.Intro == nil || *c.Intro }
+func (c Config) volumeIntro() float64 {
+	if c.VolumeIntro == nil {
+		return 0.5
+	}
+	return min(1, max(0, *c.VolumeIntro))
+}
 
 const exemploConfig = `{
   "porta": 8765,
   "abrirLauncher": true,
+  "intro": true,
+  "volumeIntro": 0.5,
   "apps": []
 }
 `
