@@ -28,6 +28,7 @@ type Ajustes struct {
 	BloquearAnuncios *bool    `json:"bloquearAnuncios,omitempty"`
 	Desempenho       string   `json:"desempenho,omitempty"` // "auto" (padrão), "leve" ou "completo"
 	MostrarStats     bool     `json:"mostrarStats,omitempty"`
+	Idioma           string   `json:"idioma,omitempty"` // auto, pt, en, es
 
 	Extras          []AppExtra `json:"extras,omitempty"` // sites adicionados pelo painel
 	Perfis          []Perfil   `json:"perfis"`

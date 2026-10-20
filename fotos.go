@@ -45,7 +45,7 @@ func (f *Fotos) Lista() []string {
 		l = append(l, foto{it.Name(), info.ModTime()})
 	}
 	sort.Slice(l, func(i, j int) bool { return l[i].t.After(l[j].t) }) // mais novas primeiro
-	nomes := make([]string, len(l)) // nunca nil: vira [] no JSON, não null
+	nomes := make([]string, len(l))                                    // nunca nil: vira [] no JSON, não null
 	for i, x := range l {
 		nomes[i] = x.nome
 	}

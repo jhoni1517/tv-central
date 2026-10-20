@@ -147,7 +147,7 @@ func buscarTitulo(link string) string {
 	}
 	t := tituloPagina(link)
 	baixo := strings.ToLower(t)
-	for _, ruim := range []string{"http", "ops", "404", "não encontrad", "not found", "erro", "error", "access denied", "just a moment", "sign in", "entrar"} {
+	for _, ruim := range []string{"http", "ops", "404", "não encontrad", "not found", "erro", "error", "access denied", "just a moment", "sign in", "entrar", "cannot be found", "could not be found", "looking for", "não foi possível", "não existe", "página não", "page not"} {
 		if strings.Contains(baixo, ruim) {
 			return ""
 		}

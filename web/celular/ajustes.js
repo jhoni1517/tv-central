@@ -205,6 +205,13 @@
         d.onchange = () => salvar({ Desempenho: d.value });
         return h('div', { class: 'linha-aj' }, h('span', { class: 'rot' }, 'Desempenho', h('small', {}, 'Leve tira animações e vídeos (PC fraco). Automático decide sozinho.')), d);
       })(),
+      (() => {
+        const sel = h('select', { class: 'aj-input', style: 'flex:0 0 auto' }, [['auto', 'Automático'], ['pt', 'Português'], ['en', 'English'], ['es', 'Español']].map(([v, t]) => {
+          const o = h('option', { value: v }, t); if (v === ef.idioma) o.selected = true; return o;
+        }));
+        sel.onchange = async () => { await salvar({ Idioma: sel.value }); window.tvcIdioma && window.tvcIdioma(sel.value); };
+        return h('div', { class: 'linha-aj' }, h('span', { class: 'rot' }, 'Idioma'), sel);
+      })(),
       h('div', { class: 'linha-aj' }, h('span', { class: 'rot' }, 'Mostrar CPU, memória e disco', h('small', {}, 'Uma linha embaixo do relógio')), chave(ef.mostrarStats, v => salvar({ MostrarStats: v }))),
       h('div', { class: 'linha-aj' }, h('span', { class: 'rot' }, 'Vídeo de fundo geral', h('small', {}, dados.fundo ? 'Configurado' : 'Toca quando nenhum app está selecionado')),
         ...botaoEnvio(dados.fundo ? 'Trocar' : 'Escolher', 'fundo', 'video'),

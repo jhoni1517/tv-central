@@ -81,7 +81,7 @@ func (s *Servidor) lerAjustes(w http.ResponseWriter, r *http.Request) {
 func (s *Servidor) efetivo() map[string]any {
 	return map[string]any{
 		"cidade": s.cidade(), "sons": s.sons(), "intro": s.intro(), "volumeIntro": s.volumeIntro(),
-		"protetorMin": s.protetorMin(), "videosFundo": s.videosFundo(), "bloquearAnuncios": s.bloquearAnuncios(), "desempenho": s.desempenho(), "mostrarStats": s.aj.Ler().MostrarStats,
+		"protetorMin": s.protetorMin(), "videosFundo": s.videosFundo(), "bloquearAnuncios": s.bloquearAnuncios(), "desempenho": s.desempenho(), "mostrarStats": s.aj.Ler().MostrarStats, "idioma": s.idioma(),
 	}
 }
 
@@ -115,6 +115,14 @@ func (s *Servidor) protetorMin() int {
 	}
 	return s.cfg.protetorMin()
 }
+func (s *Servidor) idioma() string {
+	switch l := s.aj.Ler().Idioma; l {
+	case "pt", "en", "es":
+		return l
+	}
+	return "auto"
+}
+
 func (s *Servidor) desempenho() string {
 	if d := s.aj.Ler().Desempenho; d == "leve" || d == "completo" {
 		return d
@@ -150,6 +158,7 @@ func (s *Servidor) mudarAjustes(w http.ResponseWriter, r *http.Request) {
 		BloquearAnuncios *bool
 		Desempenho       *string
 		MostrarStats     *bool
+		Idioma           *string
 	}
 	if !lerJSON(w, r, &req) {
 		return
@@ -188,6 +197,14 @@ func (s *Servidor) mudarAjustes(w http.ResponseWriter, r *http.Request) {
 				a.Desempenho = *req.Desempenho
 			default:
 				return errors.New("modo de desempenho inválido")
+			}
+		}
+		if req.Idioma != nil {
+			switch *req.Idioma {
+			case "auto", "pt", "en", "es":
+				a.Idioma = *req.Idioma
+			default:
+				return errors.New("idioma inválido")
 			}
 		}
 		if req.MostrarStats != nil {

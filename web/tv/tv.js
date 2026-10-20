@@ -22,8 +22,8 @@ function saudacao() {
 
 function relogio() {
   const d = new Date();
-  $('#relogio').textContent = d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-  const t = d.toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' });
+  $('#relogio').textContent = d.toLocaleTimeString(window.TVC_LOCALE || 'pt-BR', { hour: '2-digit', minute: '2-digit' });
+  const t = d.toLocaleDateString(window.TVC_LOCALE || 'pt-BR', { weekday: 'long', day: 'numeric', month: 'long' });
   $('#data').textContent = t.charAt(0).toUpperCase() + t.slice(1);
 }
 
@@ -360,6 +360,7 @@ async function estado() {
     if (typeof s.protetorMin === 'number') protetorMin = s.protetorMin;
     mostrarTimer(s.timer || 0);
     aplicarDesempenho(s.desempenho);
+    if (s.idioma && window.tvcIdioma) window.tvcIdioma(s.idioma);
     const st = $('#stats');
     if (s.stats) st.textContent = `CPU ${s.stats.cpu}% · Memória livre ${(s.stats.memLivreMB / 1024).toFixed(1)} de ${(s.stats.memTotalMB / 1024).toFixed(1)} GB · Disco livre ${Math.round(s.stats.discoLivreGB)} GB`;
     mostrar('#stats', !!s.stats);
@@ -585,7 +586,7 @@ async function trocarProtetor() {
     nova.style.backgroundImage = `url("/foto/${encodeURIComponent(nome)}")`;
     nova.style.backgroundSize = 'contain'; nova.style.backgroundPosition = 'center'; nova.style.backgroundColor = '#000';
     nova.classList.add('ativa'); camadas[1 - protetorVez].classList.remove('ativa');
-    $('#prot-relogio').textContent = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+    $('#prot-relogio').textContent = new Date().toLocaleTimeString(window.TVC_LOCALE || 'pt-BR', { hour: '2-digit', minute: '2-digit' });
     $('#prot-data').textContent = $('#data').textContent;
     return;
   }
@@ -602,7 +603,7 @@ async function trocarProtetor() {
   nova.style.backgroundImage = `url("/capa/${id}")`;
   nova.classList.add('ativa'); camadas[1 - protetorVez].classList.remove('ativa');
   const d = new Date();
-  $('#prot-relogio').textContent = d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+  $('#prot-relogio').textContent = d.toLocaleTimeString(window.TVC_LOCALE || 'pt-BR', { hour: '2-digit', minute: '2-digit' });
   $('#prot-data').textContent = $('#data').textContent;
 }
 // Qualquer tecla/mouse com o protetor ligado só desliga ele (não navega)
@@ -610,7 +611,7 @@ window.addEventListener('keydown', e => { if (protetorAtivo) { e.preventDefault(
 window.addEventListener('mousemove', e => { if (Math.abs(e.movementX) + Math.abs(e.movementY) < 4) return; if (protetorAtivo) desligarProtetor(); else usou(); }, true);
 window.addEventListener('focus', () => { if (protetorAtivo) desligarProtetor(); usou(); });
 setInterval(() => {
-  if (protetorAtivo) { $('#prot-relogio').textContent = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }); return; }
+  if (protetorAtivo) { $('#prot-relogio').textContent = new Date().toLocaleTimeString(window.TVC_LOCALE || 'pt-BR', { hour: '2-digit', minute: '2-digit' }); return; }
   if (protetorMin > 0 && !modal && Date.now() - ultimoUso > protetorMin * 60000 && document.hasFocus()) ligarProtetor();
 }, 5000);
 

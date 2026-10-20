@@ -1,156 +1,92 @@
 # TV Central
 
-Transforma um PC ou notebook com Windows, ligado na TV pelo HDMI, numa **TV Box**:
-tela inicial bonita em tela cheia, streamings com **navegação por setas** e **controle pelo celular**.
+<p align="center"><img src="recursos/icone.png" width="96" alt=""></p>
 
-## O que faz
+<p align="center"><b>Turn any Windows PC plugged into a TV into a TV box: no ads, controlled from your phone.</b><br>
+<a href="README.pt-BR.md">Português</a> · <a href="../../releases/latest">Download</a></p>
 
-- **Tela inicial de TV**: abre junto com o Windows, em tela cheia, com Netflix, HBO Max, Disney+, Apple TV, YouTube, Prime Video e Globoplay.
-- **Navegação por setas nos streamings**: nos sites feitos para mouse (Netflix, Disney+, HBO Max, Apple TV…), as setas pulam entre capas e botões, OK abre e Voltar volta. O YouTube abre na interface de TV dele.
-- **Controle pelo celular** (app instalável): direcional, OK, voltar, início, volume, play/pausa, touchpad, lista de apps.
-- **Digitar e falar**: o texto vai para a TV com Enter e o campo **limpa sozinho**. Busca por voz em português.
-- **Pareamento seguro**: o código aparece na TV e só celulares pareados controlam o PC.
-- **QR code na tela**: aponte a câmera do celular e pronto.
-- **Visual de TV Box**: arte de fundo para cada app, cartões com imagem, abertura com música, sons de navegação e protetor de tela.
-- **Desligar em…**: 30, 60, 90 ou 120 minutos, pela TV ou pelo celular.
-- **Painel de ajustes no celular** (⚙): ordem e visibilidade dos apps, enviar imagem e vídeo de cada app, clima, sons, abertura, protetor.
-- **Perfis**: "Quem está assistindo?", cada um com seus apps e **logins separados** nos streamings.
-- **Modo criança**: só os apps escolhidos, sem desligar/ajustes, e para sair só com PIN no celular.
-- **Bloqueio de anúncios** nas janelas do TV Central (sites e YouTube), sem mexer no seu navegador normal.
-- **Adicione qualquer site** pelo celular (Crunchyroll, Twitch, Pluto TV…).
-- **Assistir depois**: compartilhe um link no celular → vira cartão na TV e abre no app certo.
-- **Fotos na TV**: mande fotos pelo celular; viram protetor de tela e dá para mostrar na hora.
-- **Espelhar o celular** pelo "Conectar" do Windows.
-- **Modo desempenho** automático para PC fraco e linha opcional de CPU/memória/disco.
-- **Instalador sem PowerShell**: um `.exe` só, funciona até em Windows "otimizado" sem PowerShell.
+<p align="center"><img src="docs/demo.gif" width="800" alt="Browsing the home screen"></p>
 
-## Instalar
+An old laptop on HDMI makes a great TV box: it already runs Netflix, Disney+, Max, Apple TV, YouTube and any
+website, with a better browser than most smart TVs. What it lacks is a TV interface and a remote.
+TV Central adds both, in a single 8 MB `.exe`, with no account and nothing to configure.
 
-1. Baixe o `TVCentral.exe` em [Releases](../../releases).
-2. Dê dois cliques e aceite a permissão de administrador (é para liberar a porta 8765 no firewall, só para a rede de casa).
-3. A tela inicial abre. No celular, na mesma Wi-Fi, escaneie o QR code e toque em **Mostrar código na TV**.
-
-Requisitos: Windows 10 ou 11 (64 bits) e Microsoft Edge (ou Google Chrome).
-
-> Dica: reserve o IP do PC no roteador ("Reserva de endereço" / "DHCP estático") para o endereço do controle não mudar.
-
-### Instalar o controle como app no Android
-
-Endereços `http://` não podem ser instalados como app. Para instalar:
-1. No Chrome do celular, abra `chrome://flags`, busque **insecure**, ative **Insecure origins treated as secure** e coloque o endereço do controle (ex.: `http://192.168.0.10:8765`).
-2. Reinicie o Chrome, abra o endereço e toque em **⋮ → Instalar app**.
-
-Isso também libera a busca por voz.
-
-## Usar
-
-| No celular | O que faz |
+| | |
 |---|---|
-| Setas / OK | Anda e abre (na tela inicial e nos streamings) |
-| Voltar | Volta uma tela |
-| Início | Fecha o app e volta para a tela inicial |
-| Campo de texto | Digita na TV e aperta Enter |
-| 🎤 | Busca por voz |
-| Gestos | Deslize = setas, toque = OK, segure = Voltar |
-| Touchpad | Mouse: arraste, toque para clicar, dois dedos para rolar |
+| ![Home screen](docs/tv-home-en.jpg) | ![Watch later](docs/tv-later-en.jpg) |
+| *Home screen with art for every app* | *Watch later, sent from the phone* |
+| ![Who's watching](docs/tv-profiles-en.jpg) | <img src="docs/phone-remote-en.jpg" height="300"> <img src="docs/phone-settings-en.jpg" height="300"> |
+| *Profiles with separate logins* | *Remote and settings on the phone* |
 
-Com vídeo tocando em tela grande, **OK pausa/continua** e as setas ficam com o player (avançar/voltar).
+## What you get
 
-## Controle remoto da TV
+**On the TV**
+- A full-screen home screen that starts with Windows: big cards, art and ambient colour for each app, clock and weather, and a short intro with its own music.
+- **Arrow-key navigation inside the streaming sites.** Netflix, Disney+, Max and Apple TV are built for a mouse; TV Central moves a highlight between posters and buttons, OK opens, Back goes back. YouTube opens in its own TV interface.
+- **Ad blocking** in the windows TV Central opens: ad and tracker domains on every site, and YouTube ads stripped before the player sees them. Your everyday browser is not touched.
+- **Profiles** ("Who's watching?") with their own apps and their own streaming logins, and a **kids mode** that only shows the apps you allow and needs a PIN to leave.
+- **Watch later**, **photos from the phone** as a screensaver or on demand, **phone mirroring** through Windows' *Connect*, a **sleep timer**, background **videos** you pick, and a screensaver that keeps the panel from burning in.
+- A **light mode** that turns itself on when the PC can't keep up (tested on Intel HD 3000), and an optional line with CPU, memory and disk.
 
-O controle da TV fala com a TV por infravermelho; o PC não recebe esse sinal sozinho. Com um **receptor infravermelho USB que aprende botões** (ex.: FLIRC), ensine:
+**On the phone** (open the address shown on the TV, no app store)
+- D-pad, OK, back, home, volume and play/pause; a **gestures** pad (swipe to move, tap for OK, hold for back) and a **touchpad**.
+- Type and dictate on the TV; the text box clears itself after Enter.
+- **Settings panel**: reorder and hide apps, upload your own image or video for each one, add any website as a card, profiles, kids mode, weather city, sounds, language.
+- Share a link from Netflix or YouTube on the phone → *TV Central* and it lands in Watch later.
 
-| Botão do controle | Tecla |
-|---|---|
-| Setas / OK | Setas / Enter |
-| Return | Esc |
-| Home | Home do navegador (tecla de mídia) |
-| Play/Pause | Play/Pause (tecla de mídia) |
-| Vol + / − / Mudo | teclas de volume |
+**Behind the scenes**
+- Updates itself from GitHub Releases, checks the SHA-256, installs only when nothing is playing and rolls back if the new version fails to start.
+- Pairing with a code shown on the TV; tokens are stored hashed. The port is opened to the local network only, and requests from other websites are refused.
+- English, Portuguese and Spanish. A single Go binary with the web UI embedded; no PowerShell, no .NET, no installer framework.
 
-A tecla **Home do navegador** e **Ctrl+Alt+H** voltam para a tela inicial de qualquer lugar.
+## Install
 
-Para mexer no Windows: **Sistema → Área de trabalho** fecha a tela inicial até você apertar Início de novo. Se a tela inicial fechar por acidente, ela reabre sozinha.
+1. Download `TVCentral.exe` from [Releases](../../releases/latest).
+2. Double-click it and accept the administrator prompt (it opens port 8765 to your local network only and sets the PC to never sleep with the lid closed).
+3. The home screen opens. On your phone, on the same Wi-Fi, scan the QR code and tap **Show code on the TV**.
 
-## Personalizar
+Needs Windows 10 or 11 (64-bit) and Microsoft Edge (or Google Chrome). From then on it updates by itself.
 
-Edite `%LOCALAPPDATA%\TVCentral\config.json` e reinicie o programa:
+> Tip: reserve the PC's IP address in your router ("DHCP reservation") so the phone always finds it.
 
-```json
-{
-  "porta": 8765,
-  "abrirLauncher": true,
-  "apps": [
-    { "id": "prime", "oculto": true },
-    { "id": "crunchyroll", "nome": "Crunchyroll", "destino": "https://www.crunchyroll.com", "cor": "#F47521" },
-    { "id": "jogos", "nome": "Jogos", "tipo": "programa", "destino": "C:\\Jogos\\ES-DE\\ES-DE.exe", "cor": "#2E7D32" }
-  ]
-}
-```
+### Install the remote as an app on Android
 
-- Mesmo `id` de um app padrão: altera só os campos informados.
-- `tipo`: `web` (abre no Edge em tela cheia) ou `programa` (um `.exe`).
-- `setas: false` desliga a navegação por setas num site.
-- `perfil`: perfil separado do navegador (logins ficam salvos por perfil).
-- `"intro": false` desliga a abertura; `"volumeIntro"` vai de 0 a 1 (padrão 0.5).
-- `"cidade": "Curitiba"` mostra o clima no topo da tela inicial.
-- `"sons": false` desliga os sons de navegação; `"protetorMin"`: minutos até o protetor de tela (0 desliga).
+Browsers only install `https://` sites as apps. In Chrome on the phone, open `chrome://flags`, search for
+**insecure**, enable *Insecure origins treated as secure* with the remote's address (e.g. `http://192.168.0.10:8765`),
+relaunch, open the address and tap **⋮ → Install app**. That also enables voice typing and *Share → TV Central*.
 
-## Atualizações
+### Use your TV's remote
 
-O programa procura versão nova sozinho (90 s depois de abrir e a cada 6 horas), confere o SHA-256 e instala quando **nenhum app está aberto**. A tela inicial e o controle do celular recarregam sozinhos. Também dá para forçar em **Sistema → Atualizar** na tela inicial. Se a versão nova não abrir, ele volta para a anterior.
+The TV's own infrared remote can't talk to a PC over HDMI. Any **air mouse / TV box remote with a USB dongle**
+works out of the box (arrows, OK, Back and Home are understood everywhere). For a do-it-yourself infrared receiver
+with an Arduino Pro Micro, see [`hardware/receptor-ir`](hardware/receptor-ir) (code and a 3D-printable case).
 
-Para desligar: `"atualizarAuto": false` no `config.json`.
+## Customise
 
-Para publicar uma versão: mude o número no arquivo `VERSION` e envie para a `main`. O GitHub Actions compila e publica em Releases.
+Everything is in the phone's settings panel (⚙). Power users can also edit `%LOCALAPPDATA%\TVCentral\config.json`
+(apps, programs to launch, defaults) and drop images or videos named after an app id (`netflix.jpg`, `disney.mp4`,
+`fundo.mp4` for the background) into `%LOCALAPPDATA%\TVCentral\capas\`.
 
-## Problemas
+To remove it: `TVCentral.exe remover`.
 
-No celular: **Apps → Diagnóstico** mostra a versão, a rede e as últimas linhas do registro do PC. O registro completo fica em `%LOCALAPPDATA%\TVCentral\logs\tvcentral.log`.
+## How it compares
 
-O medidor ao lado do nome no controle mostra o tempo de resposta do PC: verde até 80 ms. Se ficar vermelho, o problema é o Wi-Fi.
+[CleanYourTV](https://github.com/Gathin23/cleanyourtv) does a great job for **Android TVs**: it disables the
+manufacturer's bloat over ADB and installs a clean launcher. TV Central is for the other common setup, a **PC
+on HDMI**, and adds what a PC can do that a TV can't: a phone remote with typing and gestures, profiles with
+separate logins, kids mode, watch later, photos, ad blocking that also covers YouTube, and automatic updates.
 
-## Imagens e vídeos dos apps
-
-As artes que vêm no programa são próprias (sem logos). Para usar a sua imagem num app, coloque em `%LOCALAPPDATA%\TVCentral\capas\` um arquivo com o id do app: `netflix.jpg`, `hbomax.jpg`, `disney.jpg`, `appletv.jpg`, `youtube.jpg`, `prime.jpg`, `globoplay.jpg` (ou `.png`/`.webp`, de preferência 1600×900 e mais escura à esquerda).
-
-**Vídeos de fundo:** coloque `netflix.mp4`, `disney.webm` etc. na mesma pasta. O vídeo toca sem som no fundo quando o app está selecionado e no protetor de tela; `fundo.mp4` toca quando nenhum app está selecionado. Prefira vídeos curtos (10 a 60 s), 720p ou 1080p, em H.264 (`.mp4`). O vídeo para sozinho enquanto um app está aberto. Para desligar: `"videosFundo": false`.
-
-## Remover
-
-`TVCentral.exe remover` (pede administrador). Os dados ficam em `%LOCALAPPDATA%\TVCentral`.
-
-## Desenvolver
+## Build
 
 ```sh
-go run .                     # roda fora do Windows também (teclas só aparecem no log)
 go test ./...
 GOOS=windows GOARCH=amd64 go build -ldflags "-H windowsgui -s -w -X main.versao=$(cat VERSION)" -o dist/TVCentral.exe .
+go run .   # runs on Linux/macOS too, for working on the screens (keys only go to the log)
 ```
 
-Estrutura:
+Bumping `VERSION` and pushing to `main` makes GitHub Actions build, test and publish a release, which every
+installed copy picks up. See [CONTRIBUTING.md](CONTRIBUTING.md).
 
-| Arquivo | Função |
-|---|---|
-| `main.go` | Início, instalar/remover |
-| `servidor.go` | HTTP, WebSocket do controle, rotas da TV |
-| `gerente.go` | Abre/fecha apps e a tela inicial no Edge |
-| `atualizar.go` | Atualização automática pelo GitHub Releases |
-| `cdp.go` | Coloca a navegação por setas nas páginas (porta de depuração local) |
-| `entrada_windows.go` | Teclado e mouse via `SendInput` |
-| `sistema_windows.go` | Foco de janela, firewall, início automático, desligar |
-| `web/tv` | Tela inicial |
-| `web/celular` | Controle do celular (PWA) |
-| `web/injetar/setas.js` | Navegação espacial por setas |
-
-
-## Segurança
-
-- A porta 8765 só é liberada para a **rede local**, e só para este programa.
-- Sem pareamento, o celular não consegue mandar comandos. Os tokens ficam salvos só como hash.
-- A tela inicial e as ações de sistema só respondem ao próprio computador.
-- A porta de depuração do navegador (9222) escuta só em `127.0.0.1`.
-
-## Licença
+## Licence
 
 MIT

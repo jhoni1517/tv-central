@@ -1,0 +1,19 @@
+name: Problema / Bug
+description: Algo não funcionou / Something didn't work
+body:
+  - type: textarea
+    id: oque
+    attributes:
+      label: O que aconteceu? / What happened?
+    validations:
+      required: true
+  - type: textarea
+    id: diag
+    attributes:
+      label: Diagnóstico (celular → Apps → Diagnóstico) / Diagnostics
+      render: text
+  - type: input
+    id: pc
+    attributes:
+      label: PC e Windows / PC and Windows
+      placeholder: "Ex.: notebook Core i5 2ª geração, Intel HD 3000, Windows 10 1909"

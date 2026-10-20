@@ -86,6 +86,14 @@ func (s *Servidor) rotas() http.Handler {
 	}))
 	mux.HandleFunc("GET /api/apps", s.autenticado(s.listarApps))
 	mux.HandleFunc("GET /capa/{id}", s.capa)
+	i18n := func(w http.ResponseWriter, r *http.Request) {
+		b, _ := arquivosWeb.ReadFile("web/i18n.js")
+		w.Header().Set("Content-Type", "text/javascript; charset=utf-8")
+		w.Header().Set("Cache-Control", "no-cache")
+		_, _ = w.Write(b)
+	}
+	mux.HandleFunc("GET /i18n.js", i18n)
+	mux.HandleFunc("GET /tv/i18n.js", i18n)
 	mux.HandleFunc("GET /video/{id}", s.midias.Servir)
 	s.rotasPainel(mux)
 	s.rotasDepois(mux)
@@ -362,6 +370,7 @@ func (s *Servidor) estadoTV(w http.ResponseWriter, r *http.Request) {
 		"perfil":          s.perfilPublico(),
 		"perfis":          aj.Perfis,
 		"desempenho":      s.desempenho(),
+		"idioma":          s.idioma(),
 		"depois":          s.depoisSe(aj.Crianca.Ativo),
 		"fotos":           len(s.fotos.Lista()),
 		"fotoAgora":       s.fotos.Agora(),
