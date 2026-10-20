@@ -1,6 +1,6 @@
 // Tela inicial da TV: navegação por setas entre linhas de cartões.
 const $ = s => document.querySelector(s);
-const linhas = [[], []];
+const linhas = [[], [], []]; // apps, assistir depois, sistema
 let pos = { linha: 0, col: 0 };
 let modal = null; // 'confirmar' (caixa de confirmação) ou 'perfil' (quem está assistindo)
 let confirmarAcao = null;
@@ -47,7 +47,7 @@ function montarApps(apps) {
     caixa.append(b);
   }
   linhas[0] = [...caixa.children];
-  linhas[1] = sistemaVisivel();
+  linhas[2] = sistemaVisivel();
   let ultimo = null;
   try { ultimo = localStorage.getItem('ultimo-app'); } catch (_) {}
   const i = linhas[0].findIndex(b => b.dataset.id === ultimo);
@@ -73,8 +73,15 @@ function focar(peloMouse) {
   }
   fila._x = x;
   fila.style.transform = `translateX(${-x}px)`;
+  rolarTela(el);
   const raiz = document.documentElement.style;
-  if (el.dataset.id) {
+  if (el.dataset.depois) {
+    raiz.setProperty('--cor', '#3a6df0'); raiz.setProperty('--cor2', '#0b1430');
+    titulo(el.dataset.titulo);
+    $('#subtitulo').textContent = 'Assistir depois · ' + el.lastChild.textContent;
+    $('#dica').classList.add('ver');
+    trocarArte(el.dataset.app || null);
+  } else if (el.dataset.id) {
     raiz.setProperty('--cor', el.style.getPropertyValue('--c1'));
     raiz.setProperty('--cor2', el.style.getPropertyValue('--c2'));
     titulo(el.dataset.nome);
@@ -89,6 +96,23 @@ function focar(peloMouse) {
     $('#dica').classList.add('ver');
     trocarArte(null);
   }
+}
+
+// Com várias linhas, a tela sobe para a linha em foco caber (e volta ao topo na primeira linha)
+function rolarTela(el) {
+  const main = document.querySelector('main');
+  const linha = el.closest('.linha');
+  let y = main._y || 0;
+  if (pos.linha === 0) y = 0;
+  else {
+    const r = linha.getBoundingClientRect(), baixo = r.bottom + y, limite = innerHeight * 0.9;
+    y = Math.max(0, baixo - limite);
+  }
+  if (y === main._y) return;
+  main._y = y;
+  main.style.transform = y ? `translateY(${-y}px)` : '';
+  $('#rodape').style.opacity = y ? '0' : '';
+  document.querySelector('.destaque').style.opacity = y ? '0' : ''; // o título não passa por cima do topo
 }
 
 function titulo(t) {
@@ -144,8 +168,9 @@ window.addEventListener('focus', () => { if (videoFundo().dataset.id) videoFundo
 
 function mover(dl, dc) {
   if (dl) {
-    const nl = pos.linha + dl;
-    if (nl < 0 || nl >= linhas.length || !linhas[nl].length) { Som.limite(); return; }
+    let nl = pos.linha + dl;
+    while (nl >= 0 && nl < linhas.length && !linhas[nl].length) nl += dl; // pula linhas vazias
+    if (nl < 0 || nl >= linhas.length) { Som.limite(); return; }
     // Mantém a posição horizontal aproximada ao trocar de linha
     const x = linhas[pos.linha][pos.col].getBoundingClientRect().left;
     let melhor = 0, dist = Infinity;
@@ -215,7 +240,22 @@ async function ativar() {
     try { await post('api/abrir', { id: el.dataset.id }); } catch (e) { $('#abrindo-texto').textContent = 'Não abriu: ' + e.message; }
     return;
   }
+  if (el.dataset.depois) {
+    $('#abrindo-texto').textContent = `Abrindo ${el.dataset.titulo}…`;
+    $('#abrindo').style.backgroundImage = `linear-gradient(rgba(0,0,0,.55), rgba(0,0,0,.55)), url("/capa/${el.dataset.app || 'padrao'}")`;
+    mostrar('#abrindo', true);
+    setTimeout(() => mostrar('#abrindo', false), 4000);
+    try { await post('api/depois/abrir', { id: el.dataset.depois }); } catch (e) { $('#abrindo-texto').textContent = 'Não abriu: ' + e.message; }
+    return;
+  }
   const acao = el.dataset.acao;
+  if (acao === 'fotos') { abrirVisor(0); return; }
+  if (acao === 'espelhar') {
+    mostrar('#espelho', true); modal = 'espelho';
+    try { await post('api/espelhar', {}); } catch (e) { aviso(e.message, 9000); }
+    setTimeout(() => { if (modal === 'espelho') { modal = null; mostrar('#espelho', false); } }, 15000);
+    return;
+  }
   if (acao === 'celular') { $('#qr').classList.toggle('oculto'); return; }
   if (acao === 'timer') { proximoTimer(); return; }
   if (acao === 'perfil') { abrirPerfis(); return; }
@@ -248,6 +288,13 @@ function pintarModal() { botoesModal().forEach((b, i) => b.classList.toggle('foc
 document.addEventListener('keydown', async e => {
   const k = e.key === 'BrowserBack' || e.key === 'GoBack' ? 'Escape' : e.key;
   if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Enter', 'Escape', ' '].includes(k)) e.preventDefault();
+  if (modal === 'visor') {
+    if (k === 'ArrowRight' || k === 'ArrowDown') passarFoto(1);
+    else if (k === 'ArrowLeft' || k === 'ArrowUp') passarFoto(-1);
+    else if (k === 'Escape' || k === 'Enter') fecharVisor();
+    return;
+  }
+  if (modal === 'espelho') { modal = null; mostrar('#espelho', false); return; }
   if (modal === 'perfil') {
     if (k === 'ArrowLeft') { focoPerfil = Math.max(0, focoPerfil - 1); Som.mover(); pintarPerfis(); }
     else if (k === 'ArrowRight') { focoPerfil = Math.min(perfis.length - 1, focoPerfil + 1); Som.mover(); pintarPerfis(); }
@@ -346,6 +393,18 @@ async function estado() {
     const dica = $('#rodape').lastElementChild;
     dica.firstElementChild.style.display = crianca ? 'none' : '';
     dica.lastChild.textContent = crianca ? 'Para sair do modo criança, use o celular' : ' no celular volta aqui';
+    montarDepois(s.depois || []);
+    totalFotos = s.fotos || 0;
+    $('#sistema [data-acao="fotos"]').classList.toggle('oculto', !totalFotos);
+    $('#fotos-txt').textContent = totalFotos ? `${totalFotos} foto${totalFotos > 1 ? 's' : ''}` : '';
+    $('#sistema [data-acao="espelhar"]').classList.toggle('oculto', crianca);
+    if (s.fotoAgora && s.fotoAgora.quando !== estado.fotoQuando) {
+      const primeira = estado.fotoQuando === undefined; estado.fotoQuando = s.fotoAgora.quando;
+      if (!primeira) abrirVisor(s.fotoAgora.nome);
+    } else if (!s.fotoAgora && estado.fotoQuando === undefined) estado.fotoQuando = null;
+    const sisAntes = linhas[2].length; linhas[2] = sistemaVisivel();
+    if (pos.linha === 2 && pos.col >= linhas[2].length) { pos.col = Math.max(0, linhas[2].length - 1); focar(); }
+    void sisAntes;
     const j = JSON.stringify(s.apps) + crianca + perfis.length;
     if (j !== appsJson) { appsJson = j; montarApps(s.apps); }
     // "Quem está assistindo?" ao ligar (depois da abertura)
@@ -391,6 +450,59 @@ function medirFPS() {
   };
   setTimeout(() => requestAnimationFrame(conta), 1500);
 }
+
+// ---------- Assistir depois ----------
+let depoisJson = '';
+function montarDepois(itens) {
+  const j = JSON.stringify(itens);
+  if (j === depoisJson) return;
+  depoisJson = j;
+  const caixa = $('#depois');
+  const idFoco = (linhas[pos.linha][pos.col] || {}).dataset;
+  caixa.replaceChildren(...itens.map(it => {
+    const b = document.createElement('button');
+    b.className = 'cartao';
+    b.dataset.depois = it.id; b.dataset.titulo = it.titulo; b.dataset.app = it.app || '';
+    b.style.setProperty('--capa', `url("/capa/${it.app || 'padrao'}?p=1")`);
+    b.style.setProperty('--c1', '#3a3f4d');
+    const n = document.createElement('span'); n.className = 'nome'; n.textContent = it.titulo;
+    const de = document.createElement('span'); de.className = 'de'; de.textContent = new URL(it.url).hostname.replace(/^www\./, '');
+    b.append(n, de);
+    return b;
+  }));
+  linhas[1] = [...caixa.children];
+  mostrar('#linha-depois', itens.length > 0);
+  if (pos.linha === 1) { pos.col = Math.min(pos.col, linhas[1].length - 1); if (pos.col < 0) pos = { linha: 0, col: 0 }; }
+  void idFoco;
+  focar();
+}
+
+// ---------- Visor de fotos (pelo botão Fotos ou quando o celular manda mostrar) ----------
+let totalFotos = 0, fotosVisor = [], idxFoto = 0, vezFoto = 0;
+async function abrirVisor(inicio) {
+  try { fotosVisor = (await (await fetch('/api/fotos', { cache: 'no-store' })).json()).fotos || []; } catch (_) { fotosVisor = []; }
+  if (!fotosVisor.length) { aviso('Nenhuma foto: mande pelo celular em Apps → Fotos'); return; }
+  idxFoto = typeof inicio === 'string' ? Math.max(0, fotosVisor.indexOf(inicio)) : 0;
+  modal = 'visor'; mostrar('#visor', true);
+  if (protetorAtivo) desligarProtetor();
+  pintarFoto();
+  clearInterval(abrirVisor.t);
+  abrirVisor.t = setInterval(() => passarFoto(1, true), 8000);
+}
+function pintarFoto() {
+  const [a, b] = [$('#visor-a'), $('#visor-b')];
+  const nova = vezFoto ? a : b, velha = vezFoto ? b : a; vezFoto = 1 - vezFoto;
+  nova.onload = () => { nova.classList.add('ativa'); velha.classList.remove('ativa'); };
+  nova.src = '/foto/' + encodeURIComponent(fotosVisor[idxFoto]);
+  $('#visor-pos').textContent = `${idxFoto + 1} de ${fotosVisor.length}`;
+}
+function passarFoto(d, auto) {
+  if (!fotosVisor.length) return;
+  idxFoto = (idxFoto + d + fotosVisor.length) % fotosVisor.length;
+  if (!auto) { Som.mover(); clearInterval(abrirVisor.t); abrirVisor.t = setInterval(() => passarFoto(1, true), 8000); }
+  pintarFoto();
+}
+function fecharVisor() { clearInterval(abrirVisor.t); modal = null; mostrar('#visor', false); Som.voltar(); usou(); }
 
 // ---------- Sons de navegação (curtinhos e baixos; "sons": false no config.json desliga) ----------
 const Som = {
@@ -460,10 +572,27 @@ function desligarProtetor() {
   tocarVideoFundo(arteAtual || 'fundo');
   usou();
 }
-function trocarProtetor() {
+async function trocarProtetor() {
+  if (totalFotos && (!trocarProtetor.fotos || protetorIdx % 20 === 0)) {
+    try { trocarProtetor.fotos = (await (await fetch('/api/fotos', { cache: 'no-store' })).json()).fotos || []; } catch (_) {}
+  }
+  const fotos = totalFotos ? (trocarProtetor.fotos || []) : [];
+  if (fotos.length) { // com fotos, o protetor vira um porta-retratos
+    const nome = fotos[protetorIdx++ % fotos.length];
+    pararVideo($('#prot-video'));
+    const camadas = [$('#prot-a'), $('#prot-b')];
+    const nova = camadas[protetorVez = 1 - protetorVez];
+    nova.style.backgroundImage = `url("/foto/${encodeURIComponent(nome)}")`;
+    nova.style.backgroundSize = 'contain'; nova.style.backgroundPosition = 'center'; nova.style.backgroundColor = '#000';
+    nova.classList.add('ativa'); camadas[1 - protetorVez].classList.remove('ativa');
+    $('#prot-relogio').textContent = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+    $('#prot-data').textContent = $('#data').textContent;
+    return;
+  }
   const ids = linhas[0].map(b => b.dataset.id);
   if (!ids.length) return;
   const id = ids[protetorIdx++ % ids.length];
+  [$('#prot-a'), $('#prot-b')].forEach(c => { c.style.backgroundSize = ''; c.style.backgroundPosition = ''; });
   const pv = $('#prot-video');
   if (videosLigados && videosFundo.has(id)) {
     pv.classList.remove('ativa'); pv.src = `/video/${id}`; pv.play().catch(() => {});
@@ -487,7 +616,7 @@ setInterval(() => {
 
 relogio();
 setInterval(relogio, 5000);
-linhas[1] = sistemaVisivel();
+linhas[2] = sistemaVisivel();
 // Com a tela inicial na frente: atualiza a cada 1,5 s. Com um app aberto: a cada 6 s (economiza).
 (function laco() {
   estado();

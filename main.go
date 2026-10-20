@@ -160,7 +160,10 @@ func rodar(op Opcoes) {
 func prepararCapas(dados string) {
 	pasta := filepath.Join(dados, "capas")
 	_ = os.MkdirAll(pasta, 0o755)
-	if sobras, _ := filepath.Glob(filepath.Join(pasta, ".envio-*")); len(sobras) > 0 {
+	sobras, _ := filepath.Glob(filepath.Join(pasta, ".envio-*"))
+	maisSobras, _ := filepath.Glob(filepath.Join(dados, "fotos", ".envio-*"))
+	sobras = append(sobras, maisSobras...)
+	if len(sobras) > 0 {
 		for _, f := range sobras { // envios interrompidos
 			_ = os.Remove(f)
 		}

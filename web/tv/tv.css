@@ -156,7 +156,7 @@ video.arte { width: 100%; height: 100%; object-fit: cover; object-position: righ
 .quem-item .av { width: 11vw; height: 11vw; border-radius: 2.4vw; display: grid; place-items: center; font-size: 6vw; outline: .35vw solid transparent; outline-offset: .5vw; transition: transform .15s ease-out; }
 .quem-item.foco { color: #fff; }
 .quem-item.foco .av { outline-color: #fff; transform: scale(1.08); }
-body.modo-crianca .linha[data-linha="1"] { display: none; }
+body.modo-crianca .linha[data-linha="sistema"], body.modo-crianca #linha-depois { display: none !important; }
 .quem-item .av, .perfil-chip .av { color: #fff; } /* cor com transparência apagava o emoji */
 
 .hora { position: relative; }
@@ -167,3 +167,20 @@ body.leve *, body.leve *::before, body.leve *::after { transition: none !importa
 body.leve .cartao.foco { transform: none; }
 body.leve #video-fundo, body.leve #prot-video { display: none !important; }
 #intro.simples .intro-linha, #intro.simples .intro-anel { display: none; }
+
+/* ---------- Assistir depois ---------- */
+.cartoes.depois .cartao { width: 14vw; padding: 1vw 1.1vw; flex-direction: column; justify-content: flex-end; align-items: flex-start; gap: .3vw; }
+.cartoes.depois .cartao .nome { font-size: 1.15vw; font-weight: 700; line-height: 1.2; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; text-align: left; }
+.cartoes.depois .cartao .de { position: relative; z-index: 1; font-size: .85vw; color: rgba(255,255,255,.75); }
+/* ---------- Visor de fotos ---------- */
+.visor { position: fixed; inset: 0; z-index: 45; background: #000; }
+.visor img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; opacity: 0; transition: opacity .6s; }
+.visor img.ativa { opacity: 1; }
+.visor-info { position: absolute; left: 50%; bottom: 2vw; transform: translateX(-50%); padding: .5vw 1.2vw; border-radius: 99vw; background: rgba(0,0,0,.55); font-size: 1vw; color: rgba(255,255,255,.8); }
+.espelho-caixa { text-align: left; max-width: 46vw; }
+.espelho-caixa ol { font-size: 1.5vw; line-height: 1.8; margin: 0 0 1.5vw; padding-left: 2vw; }
+.espelho-caixa small { font-size: 1.1vw; }
+main { transition: transform .25s ease-out; }
+#rodape { transition: opacity .2s; }
+.destaque { transition: opacity .2s; }
+header { position: relative; z-index: 2; }

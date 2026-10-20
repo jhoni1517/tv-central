@@ -3,6 +3,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"net"
@@ -297,4 +298,16 @@ func ehNavegador(pid int) bool {
 	}
 	nome := strings.ToLower(filepath.Base(windows.UTF16ToString(buf[:n])))
 	return nome == "msedge.exe" || nome == "chrome.exe"
+}
+
+// abrirEspelhamento abre o "Conectar" do Windows (Projetar para este PC): o celular espelha a tela
+// pelo "Transmitir"/"Smart View"/"Espelhamento de tela".
+func abrirEspelhamento() error {
+	win := os.Getenv("WINDIR")
+	if existe(filepath.Join(win, `SystemApps\Microsoft.PPIProjection_cw5n1h2txyewy`)) {
+		return exec.Command("explorer.exe", `shell:AppsFolder\Microsoft.PPIProjection_cw5n1h2txyewy!Microsoft.PPIProjection`).Start()
+	}
+	// Windows 10 2004+ e 11: "Tela sem fio" é um recurso opcional; abre as configurações dele
+	_ = exec.Command("explorer.exe", "ms-settings:project").Start()
+	return errors.New("abri as configurações de Projetar para este PC. Se pedir, instale o recurso opcional \"Tela sem fio\" e tente de novo")
 }

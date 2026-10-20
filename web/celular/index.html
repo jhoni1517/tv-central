@@ -84,6 +84,22 @@
 
   <div id="aba-apps" class="aba oculto">
     <div id="lista-apps" class="apps"></div>
+    <div class="cartao-aj sem-crianca" id="caixa-depois">
+      <h2>Assistir depois</h2>
+      <p class="ajuda">Cole o link de um filme, série ou vídeo. Dica: no app da Netflix/YouTube, toque em Compartilhar → <b>TV Central</b>.</p>
+      <form id="form-depois" class="linha-aj">
+        <input id="campo-depois" class="aj-input" placeholder="Cole o link aqui" autocomplete="off" inputmode="url">
+        <button class="aj-btn primario">Salvar</button>
+      </form>
+      <div id="lista-depois"></div>
+    </div>
+    <div class="cartao-aj sem-crianca" id="caixa-fotos">
+      <h2>Fotos na TV</h2>
+      <p class="ajuda">As fotos viram o protetor de tela. Toque numa foto para mostrar na TV agora.</p>
+      <div class="linha-aj"><button id="enviar-fotos" class="aj-btn primario">Enviar fotos</button><span id="fotos-status" class="rot" style="font-size:13px;color:var(--suave)"></span></div>
+      <div class="progresso oculto" id="fotos-prog"><i></i></div>
+      <div id="grade-fotos" class="grade-fotos"></div>
+    </div>
     <div class="timer">
       <span>Desligar em <b id="timer-cel">—</b></span>
       <div class="timer-botoes">

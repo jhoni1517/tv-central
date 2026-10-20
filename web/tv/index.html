@@ -27,10 +27,17 @@
     <div class="cartoes" id="apps"></div>
   </section>
 
-  <section class="linha" data-linha="1">
+  <section class="linha oculto" data-linha="depois" id="linha-depois">
+    <h2>Assistir depois</h2>
+    <div class="cartoes depois" id="depois"></div>
+  </section>
+
+  <section class="linha" data-linha="sistema">
     <h2>Sistema</h2>
     <div class="cartoes pequenos" id="sistema">
       <button class="cartao sis oculto" data-acao="perfil"><span class="icone">👥</span><span>Trocar perfil</span></button>
+      <button class="cartao sis oculto" data-acao="fotos"><span class="icone">🖼</span><span>Fotos<small id="fotos-txt"></small></span></button>
+      <button class="cartao sis" data-acao="espelhar"><span class="icone">📲</span><span>Espelhar celular</span></button>
       <button class="cartao sis" data-acao="celular"><span class="icone">📱</span><span>Conectar celular</span></button>
       <button class="cartao sis" data-acao="reiniciar"><span class="icone">↻</span><span>Reiniciar</span></button>
       <button class="cartao sis" data-acao="desligar"><span class="icone">⏻</span><span>Desligar</span></button>
@@ -80,6 +87,23 @@
   <div class="caixa">
     <p class="quem-titulo">Quem está assistindo?</p>
     <div id="quem-lista" class="quem-lista"></div>
+  </div>
+</div>
+
+<div id="visor" class="visor oculto">
+  <img id="visor-a" alt=""><img id="visor-b" alt="">
+  <div class="visor-info"><span id="visor-pos"></span> · <kbd>← →</kbd> passar · <kbd>Voltar</kbd> fechar</div>
+</div>
+
+<div id="espelho" class="sobre oculto">
+  <div class="caixa espelho-caixa">
+    <p>📲 Espelhar o celular</p>
+    <ol>
+      <li>No celular, abra o painel rápido (deslize de cima para baixo)</li>
+      <li>Toque em <b>Transmitir</b>, <b>Smart View</b> ou <b>Espelhamento de tela</b></li>
+      <li>Escolha este computador na lista</li>
+    </ol>
+    <small>A janela do Windows "Conectar" abre por cima. Aperte Início no celular para voltar.</small>
   </div>
 </div>
 

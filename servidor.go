@@ -40,6 +40,8 @@ type Servidor struct {
 	midias        *Midias
 	clima         *Clima
 	medidor       Medidor
+	depois        *ListaDepois
+	fotos         *Fotos
 	aj            *CofreAjustes
 	tentativasPin Limitador
 	conectados    atomic.Int32 // celulares com o controle aberto
@@ -48,7 +50,7 @@ type Servidor struct {
 }
 
 func novoServidor(cfg Config, par *Pareamento, ger *Gerente, aj *CofreAjustes) *Servidor {
-	return &Servidor{aj: aj, cfg: cfg, par: par, ger: ger, atu: novoAtualizador(), midias: &Midias{pasta: filepath.Join(ger.dados, "capas")}, clima: novoClima(cidadeInicial(cfg, aj))}
+	return &Servidor{aj: aj, depois: carregarDepois(filepath.Join(ger.dados, "depois.json")), fotos: &Fotos{pasta: filepath.Join(ger.dados, "fotos")}, cfg: cfg, par: par, ger: ger, atu: novoAtualizador(), midias: &Midias{pasta: filepath.Join(ger.dados, "capas")}, clima: novoClima(cidadeInicial(cfg, aj))}
 }
 
 // escutar tenta a porta por alguns segundos: depois de uma atualização a versão antiga ainda está saindo.
@@ -86,6 +88,15 @@ func (s *Servidor) rotas() http.Handler {
 	mux.HandleFunc("GET /capa/{id}", s.capa)
 	mux.HandleFunc("GET /video/{id}", s.midias.Servir)
 	s.rotasPainel(mux)
+	s.rotasDepois(mux)
+	s.rotasFotos(mux)
+	mux.HandleFunc("POST /tv/api/espelhar", soLocalF(s.semCrianca(func(w http.ResponseWriter, r *http.Request) {
+		if err := abrirEspelhamento(); err != nil {
+			erro(w, 400, err.Error())
+			return
+		}
+		responder(w, map[string]any{"ok": true})
+	})))
 	mux.HandleFunc("GET /api/diagnostico", s.autenticado(s.diagnostico))
 	mux.HandleFunc("GET /ws", s.autenticado(s.controle))
 
@@ -351,6 +362,9 @@ func (s *Servidor) estadoTV(w http.ResponseWriter, r *http.Request) {
 		"perfil":          s.perfilPublico(),
 		"perfis":          aj.Perfis,
 		"desempenho":      s.desempenho(),
+		"depois":          s.depoisSe(aj.Crianca.Ativo),
+		"fotos":           len(s.fotos.Lista()),
+		"fotoAgora":       s.fotos.Agora(),
 		"stats":           s.statsSe(aj.MostrarStats),
 		"perguntarPerfil": aj.PerguntarPerfil,
 		"crianca":         aj.Crianca.Ativo,
@@ -574,4 +588,11 @@ func (s *Servidor) statsSe(ligado bool) *Stats {
 	}
 	st := s.medidor.Atual()
 	return &st
+}
+
+func (s *Servidor) depoisSe(crianca bool) []ItemDepois {
+	if crianca {
+		return nil
+	}
+	return s.depois.Itens()
 }

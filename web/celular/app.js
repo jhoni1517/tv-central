@@ -230,7 +230,8 @@ async function carregarApps() {
   try {
     const { apps, crianca } = await api('api/apps');
     // Modo criança: sem desligar, reiniciar e timer
-    document.querySelectorAll('#aba-apps .sistema, #aba-apps .timer').forEach(el => el.classList.toggle('oculto', !!crianca));
+    document.querySelectorAll('#aba-apps .sistema, #aba-apps .timer, #aba-apps .sem-crianca').forEach(el => el.classList.toggle('oculto', !!crianca));
+    if (!crianca) { carregarDepois(); carregarFotos(); }
     const lista = $('#lista-apps');
     lista.innerHTML = '';
     for (const a of apps) {
@@ -245,6 +246,82 @@ async function carregarApps() {
     }
   } catch (_) {}
 }
+
+// ---------- Assistir depois ----------
+function el(tag, props = {}, ...filhos) {
+  const e = document.createElement(tag);
+  for (const [k, v] of Object.entries(props)) { if (k.startsWith('on')) e.addEventListener(k.slice(2), v); else if (k === 'class') e.className = v; else if (k === 'style') e.style.cssText = v; else e.setAttribute(k, v); }
+  e.append(...filhos.filter(f => f != null));
+  return e;
+}
+function aviso(txt) {
+  const t = el('div', { class: 'toast' }, txt); document.body.append(t); setTimeout(() => t.remove(), 2500);
+}
+async function carregarDepois() {
+  try {
+    const itens = (await api('api/depois')).itens || [];
+    $('#lista-depois').replaceChildren(...itens.map(it => el('div', { class: 'item-depois' },
+      el('div', {}, el('b', {}, it.titulo), el('small', {}, new URL(it.url).hostname.replace(/^www\./, ''))),
+      el('button', { class: 'aj-btn perigo', onclick: async () => { try { await api('api/depois/' + it.id, { method: 'DELETE' }); carregarDepois(); } catch (e) { aviso(e.message); } } }, '✕'))));
+  } catch (_) {}
+}
+async function salvarDepois(texto) {
+  try { await api('api/depois', { method: 'POST', body: JSON.stringify({ texto }) }); aviso('Salvo em Assistir depois ✓'); vibrar(25); carregarDepois(); return true; }
+  catch (e) { aviso(e.message); return false; }
+}
+$('#form-depois').onsubmit = async ev => {
+  ev.preventDefault();
+  const c = $('#campo-depois');
+  if (c.value.trim() && await salvarDepois(c.value)) c.value = '';
+};
+// Compartilhar → TV Central (o Android abre /compartilhar?url=...&texto=...)
+async function receberCompartilhado() {
+  if (location.pathname !== '/compartilhar') return;
+  const p = new URLSearchParams(location.search);
+  const texto = [p.get('url'), p.get('texto'), p.get('titulo')].filter(Boolean).join(' ');
+  history.replaceState(null, '', '/');
+  if (texto) { trocarAba('apps'); await salvarDepois(texto); }
+}
+
+// ---------- Fotos ----------
+async function carregarFotos() {
+  try {
+    const fotos = (await api('api/fotos')).fotos || [];
+    $('#fotos-status').textContent = fotos.length ? `${fotos.length} na TV` : 'nenhuma ainda';
+    $('#grade-fotos').replaceChildren(...fotos.slice(0, 60).map(n => el('div', {
+      class: 'ft', style: `background-image:url("/foto/${encodeURIComponent(n)}?token=${encodeURIComponent(token)}")`,
+      onclick: async () => { try { await api('api/fotos/mostrar', { method: 'POST', body: JSON.stringify({ nome: n }) }); aviso('Mostrando na TV'); vibrar(20); } catch (e) { aviso(e.message); } },
+    }, el('button', { class: 'x', onclick: async ev => {
+      ev.stopPropagation();
+      if (!confirm('Apagar esta foto da TV?')) return;
+      try { await api('api/fotos/' + encodeURIComponent(n), { method: 'DELETE' }); carregarFotos(); } catch (e) { aviso(e.message); }
+    } }, '✕'))));
+  } catch (_) {}
+}
+$('#enviar-fotos').onclick = () => {
+  const inp = el('input', { type: 'file', accept: 'image/jpeg,image/png,image/webp,image/gif', multiple: '', style: 'display:none' });
+  inp.onchange = () => {
+    const arquivos = [...inp.files]; inp.remove();
+    if (!arquivos.length) return;
+    const fd = new FormData(); arquivos.forEach(f => fd.append('foto', f, f.name));
+    const prog = $('#fotos-prog'), barra = prog.querySelector('i');
+    prog.classList.remove('oculto'); barra.style.width = '0';
+    const x = new XMLHttpRequest();
+    x.open('POST', 'api/fotos'); x.setRequestHeader('X-Token', token);
+    x.upload.onprogress = e => { if (e.lengthComputable) barra.style.width = (100 * e.loaded / e.total) + '%'; };
+    x.onload = () => {
+      prog.classList.add('oculto');
+      let j = {}; try { j = JSON.parse(x.responseText); } catch (_) {}
+      if (x.status !== 200) { aviso(j.erro || 'Não enviou'); return; }
+      const salvas = j.salvas || [], falhas = j.falhas || [];
+      aviso(`${salvas.length} foto(s) enviada(s)` + (falhas.length ? ` · ${falhas.length} com problema` : ''));
+      carregarFotos();
+    };
+    x.onerror = () => { prog.classList.add('oculto'); aviso('Sem conexão'); };
+    x.send(fd);
+  };
+  document.body.append(inp); inp.click();
+};
 
 // ---------- Abas ----------
 function trocarAba(nome) {
@@ -275,6 +352,7 @@ async function iniciar() {
   }
   tela('controle');
   conectar();
+  receberCompartilhado();
   manterTelaAcesa();
   let aba = null; try { aba = localStorage.getItem('aba'); } catch (_) {}
   if (aba && aba !== 'apps' && $('#aba-' + aba)) trocarAba(aba); // volta na última aba usada

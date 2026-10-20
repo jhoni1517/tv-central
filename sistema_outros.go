@@ -44,3 +44,5 @@ func trocarPrograma(novo string, launcherPID int) error {
 func voltarVersaoAnterior() bool   { return false }
 func ehNavegador(pid int) bool     { return processoVivo(pid) }
 func atalhosGlobais(inicio func()) {}
+
+func abrirEspelhamento() error { return errors.New("espelhamento só no Windows") }

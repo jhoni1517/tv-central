@@ -140,3 +140,11 @@ button { font: inherit; color: inherit; border: 0; background: none; touch-actio
 .progresso i { display: block; height: 100%; width: 0; background: var(--azul); transition: width .2s; }
 .toast { position: fixed; left: 50%; bottom: 90px; transform: translateX(-50%); background: #fff; color: #000; padding: 10px 16px; border-radius: 99px; font-size: 14px; font-weight: 600; z-index: 99; max-width: 90vw; text-align: center; }
 .selo-crianca { display: inline-block; padding: 3px 8px; border-radius: 99px; background: #f5c542; color: #000; font-size: 11px; font-weight: 700; }
+
+#aba-apps .cartao-aj { margin: 0; }
+.item-depois { display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: center; padding: 8px 0; border-top: 1px solid #222632; }
+.item-depois b { font-size: 14px; display: block; }
+.item-depois small { color: var(--suave); font-size: 11px; }
+.grade-fotos { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+.grade-fotos .ft { position: relative; aspect-ratio: 1; border-radius: 10px; background: #222 center / cover; }
+.grade-fotos .ft button.x { position: absolute; top: 4px; right: 4px; width: 26px; height: 26px; border-radius: 50%; background: rgba(0,0,0,.6); font-size: 13px; }
