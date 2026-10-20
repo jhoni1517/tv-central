@@ -16,6 +16,12 @@ tela inicial bonita em tela cheia, streamings com **navegação por setas** e **
 - **Painel de ajustes no celular** (⚙): ordem e visibilidade dos apps, enviar imagem e vídeo de cada app, clima, sons, abertura, protetor.
 - **Perfis**: "Quem está assistindo?", cada um com seus apps e **logins separados** nos streamings.
 - **Modo criança**: só os apps escolhidos, sem desligar/ajustes, e para sair só com PIN no celular.
+- **Bloqueio de anúncios** nas janelas do TV Central (sites e YouTube), sem mexer no seu navegador normal.
+- **Adicione qualquer site** pelo celular (Crunchyroll, Twitch, Pluto TV…).
+- **Assistir depois**: compartilhe um link no celular → vira cartão na TV e abre no app certo.
+- **Fotos na TV**: mande fotos pelo celular; viram protetor de tela e dá para mostrar na hora.
+- **Espelhar o celular** pelo "Conectar" do Windows.
+- **Modo desempenho** automático para PC fraco e linha opcional de CPU/memória/disco.
 - **Instalador sem PowerShell**: um `.exe` só, funciona até em Windows "otimizado" sem PowerShell.
 
 ## Instalar
