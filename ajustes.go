@@ -26,10 +26,13 @@ type Ajustes struct {
 	ProtetorMin      *int     `json:"protetorMin,omitempty"`
 	VideosFundo      *bool    `json:"videosFundo,omitempty"`
 	BloquearAnuncios *bool    `json:"bloquearAnuncios,omitempty"`
+	Desempenho       string   `json:"desempenho,omitempty"` // "auto" (padrão), "leve" ou "completo"
+	MostrarStats     bool     `json:"mostrarStats,omitempty"`
 
-	Perfis          []Perfil `json:"perfis"`
-	PerfilAtual     string   `json:"perfilAtual"`
-	PerguntarPerfil bool     `json:"perguntarPerfil"` // "Quem está assistindo?" ao ligar
+	Extras          []AppExtra `json:"extras,omitempty"` // sites adicionados pelo painel
+	Perfis          []Perfil   `json:"perfis"`
+	PerfilAtual     string     `json:"perfilAtual"`
+	PerguntarPerfil bool       `json:"perguntarPerfil"` // "Quem está assistindo?" ao ligar
 
 	Crianca ModoCrianca `json:"crianca"`
 }

@@ -138,7 +138,7 @@ func rodar(op Opcoes) {
 	}()
 
 	// Reaproveita a tela inicial e o app que já estavam abertos (atualização ou reinício do programa)
-	ger.AdotarApp(cfg.apps)
+	ger.AdotarApp(srv.todosApps())
 	if !ger.AdotarLauncher(op.LauncherPID) && cfg.abrirLauncher() {
 		go ger.AbrirLauncher()
 	}

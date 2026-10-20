@@ -119,7 +119,7 @@ const videoFundo = () => $('#video-fundo');
 function tocarVideoFundo(id) {
   const v = videoFundo();
   clearTimeout(tocarVideoFundo.t);
-  if (!videosLigados || !videosFundo.has(id)) { pararVideo(v); return; }
+  if (!videosLigados || !videosFundo.has(id) || document.body.classList.contains('leve')) { pararVideo(v); return; }
   tocarVideoFundo.t = setTimeout(() => {
     const src = `/video/${id}`;
     if (v.dataset.id !== id) {
@@ -312,6 +312,10 @@ async function estado() {
     Som.ligado = s.sons !== false;
     if (typeof s.protetorMin === 'number') protetorMin = s.protetorMin;
     mostrarTimer(s.timer || 0);
+    aplicarDesempenho(s.desempenho);
+    const st = $('#stats');
+    if (s.stats) st.textContent = `CPU ${s.stats.cpu}% · Memória livre ${(s.stats.memLivreMB / 1024).toFixed(1)} de ${(s.stats.memTotalMB / 1024).toFixed(1)} GB · Disco livre ${Math.round(s.stats.discoLivreGB)} GB`;
+    mostrar('#stats', !!s.stats);
     const cl = $('#clima');
     if (s.clima) { cl.textContent = `${s.clima.icone} ${Math.round(s.clima.temp)}°`; cl.title = s.clima.texto; }
     mostrar('#clima', !!s.clima);
@@ -358,6 +362,34 @@ async function estado() {
     mostrar('#pareamento', !!s.codigo);
     if (s.codigo) $('#qr').classList.add('oculto');
   } catch (_) { /* servidor reiniciando */ }
+}
+
+// ---------- Desempenho: "auto" mede os quadros por segundo e liga o modo leve se o PC não der conta ----------
+function aplicarDesempenho(modo) {
+  let leve = modo === 'leve';
+  if (modo === 'auto') {
+    try { leve = localStorage.getItem('pc-fraco') === '1'; } catch (_) {}
+    if (!aplicarDesempenho.medido && !document.getElementById('intro')) { aplicarDesempenho.medido = true; medirFPS(); }
+  }
+  if (document.body.classList.contains('leve') !== leve) {
+    document.body.classList.toggle('leve', leve);
+    if (leve) pararVideo(videoFundo()); else tocarVideoFundo(arteAtual || 'fundo');
+  }
+}
+function medirFPS() {
+  // Mede durante uma troca de cartão (o momento mais pesado da tela)
+  let quadros = 0, inicio = 0;
+  const conta = t => {
+    if (!inicio) inicio = t;
+    quadros++;
+    if (t - inicio < 2000) requestAnimationFrame(conta);
+    else {
+      const fps = quadros * 1000 / (t - inicio);
+      try { localStorage.setItem('pc-fraco', fps < 40 ? '1' : '0'); } catch (_) {}
+      console.log('TV Central: ' + fps.toFixed(0) + ' quadros por segundo');
+    }
+  };
+  setTimeout(() => requestAnimationFrame(conta), 1500);
 }
 
 // ---------- Sons de navegação (curtinhos e baixos; "sons": false no config.json desliga) ----------

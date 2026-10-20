@@ -2,7 +2,10 @@
 // Volume contido e com limitador, para não estourar na TV. Qualquer tecla pula.
 (() => {
   const el = document.getElementById('intro');
+  let fraco = false;
+  try { fraco = localStorage.getItem('pc-fraco') === '1'; } catch (_) {}
   if (sessionStorage.getItem('intro-vista')) { el.remove(); return; }
+  if (fraco) el.classList.add('simples'); // PC fraco: só o logo e a música, sem os efeitos
   sessionStorage.setItem('intro-vista', '1');
   document.body.classList.add('na-intro');
 

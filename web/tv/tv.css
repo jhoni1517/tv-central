@@ -158,3 +158,12 @@ video.arte { width: 100%; height: 100%; object-fit: cover; object-position: righ
 .quem-item.foco .av { outline-color: #fff; transform: scale(1.08); }
 body.modo-crianca .linha[data-linha="1"] { display: none; }
 .quem-item .av, .perfil-chip .av { color: #fff; } /* cor com transparência apagava o emoji */
+
+.hora { position: relative; }
+/* fora do fluxo: não empurra o resto da tela para baixo */
+.stats { position: absolute; top: 100%; right: 0; margin-top: .3vw; white-space: nowrap; font-size: .9vw; color: var(--suave); font-variant-numeric: tabular-nums; }
+/* ---------- Modo leve: sem animações, sem vídeo e sem trocas suaves (PC fraco) ---------- */
+body.leve *, body.leve *::before, body.leve *::after { transition: none !important; animation: none !important; }
+body.leve .cartao.foco { transform: none; }
+body.leve #video-fundo, body.leve #prot-video { display: none !important; }
+#intro.simples .intro-linha, #intro.simples .intro-anel { display: none; }

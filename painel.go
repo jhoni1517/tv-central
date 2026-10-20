@@ -19,6 +19,7 @@ func (s *Servidor) rotasPainel(mux *http.ServeMux) {
 	mux.HandleFunc("GET /api/ajustes", s.autenticado(s.lerAjustes))
 	mux.HandleFunc("POST /api/ajustes", s.autenticado(s.mudarAjustes))
 	mux.HandleFunc("POST /api/perfis", s.autenticado(s.mudarPerfis))
+	mux.HandleFunc("POST /api/sites", s.autenticado(s.mudarExtras))
 	mux.HandleFunc("POST /api/perfil/atual", s.autenticado(s.perfilAtual))
 	mux.HandleFunc("POST /api/crianca/entrar", s.autenticado(s.criancaEntrar))
 	mux.HandleFunc("POST /api/crianca/sair", s.autenticado(s.criancaSair))
@@ -52,13 +53,20 @@ func (s *Servidor) responderErro(w http.ResponseWriter, err error) bool {
 type appPainel struct {
 	ID, Nome, Cor, Cor2 string
 	TemCapa, TemVideo   bool
+	Extra               bool
+	Destino             string
 }
 
 func (s *Servidor) lerAjustes(w http.ResponseWriter, r *http.Request) {
 	videos := s.midias.Videos()
 	apps := []appPainel{}
-	for _, a := range s.cfg.apps {
-		apps = append(apps, appPainel{a.ID, a.Nome, a.Cor, a.Cor2, s.capaPropria(a.ID) != "", videos[a.ID] != ""})
+	for _, a := range s.todosApps() {
+		extra := slices.ContainsFunc(s.aj.Ler().Extras, func(e AppExtra) bool { return e.ID == a.ID })
+		destino := ""
+		if extra {
+			destino = a.Destino
+		}
+		apps = append(apps, appPainel{a.ID, a.Nome, a.Cor, a.Cor2, s.capaPropria(a.ID) != "", videos[a.ID] != "", extra, destino})
 	}
 	ef := s.efetivo()
 	responder(w, map[string]any{
@@ -73,7 +81,7 @@ func (s *Servidor) lerAjustes(w http.ResponseWriter, r *http.Request) {
 func (s *Servidor) efetivo() map[string]any {
 	return map[string]any{
 		"cidade": s.cidade(), "sons": s.sons(), "intro": s.intro(), "volumeIntro": s.volumeIntro(),
-		"protetorMin": s.protetorMin(), "videosFundo": s.videosFundo(), "bloquearAnuncios": s.bloquearAnuncios(),
+		"protetorMin": s.protetorMin(), "videosFundo": s.videosFundo(), "bloquearAnuncios": s.bloquearAnuncios(), "desempenho": s.desempenho(), "mostrarStats": s.aj.Ler().MostrarStats,
 	}
 }
 
@@ -107,6 +115,13 @@ func (s *Servidor) protetorMin() int {
 	}
 	return s.cfg.protetorMin()
 }
+func (s *Servidor) desempenho() string {
+	if d := s.aj.Ler().Desempenho; d == "leve" || d == "completo" {
+		return d
+	}
+	return "auto"
+}
+
 func (s *Servidor) bloquearAnuncios() bool {
 	if a := s.aj.Ler(); a.BloquearAnuncios != nil {
 		return *a.BloquearAnuncios
@@ -133,6 +148,8 @@ func (s *Servidor) mudarAjustes(w http.ResponseWriter, r *http.Request) {
 		VideosFundo      *bool
 		PerguntarPerfil  *bool
 		BloquearAnuncios *bool
+		Desempenho       *string
+		MostrarStats     *bool
 	}
 	if !lerJSON(w, r, &req) {
 		return
@@ -164,6 +181,17 @@ func (s *Servidor) mudarAjustes(w http.ResponseWriter, r *http.Request) {
 		}
 		if req.VideosFundo != nil {
 			a.VideosFundo = req.VideosFundo
+		}
+		if req.Desempenho != nil {
+			switch *req.Desempenho {
+			case "auto", "leve", "completo":
+				a.Desempenho = *req.Desempenho
+			default:
+				return errors.New("modo de desempenho inválido")
+			}
+		}
+		if req.MostrarStats != nil {
+			a.MostrarStats = *req.MostrarStats
 		}
 		if req.BloquearAnuncios != nil {
 			a.BloquearAnuncios = req.BloquearAnuncios

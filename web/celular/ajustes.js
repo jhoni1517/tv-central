@@ -153,6 +153,33 @@
       }));
   }
 
+  function secaoSites(aj) {
+    const nome = h('input', { class: 'aj-input', placeholder: 'Nome (ex.: Crunchyroll)', maxlength: 24 });
+    const end = h('input', { class: 'aj-input', placeholder: 'Endereço (ex.: crunchyroll.com)', inputmode: 'url', autocapitalize: 'off' });
+    const CORES = ['#e5484d', '#f5a524', '#30a46c', '#12a594', '#3d7bff', '#8e4ec6', '#e93d82', '#5c5c66'];
+    let cor = CORES[0];
+    const cores = h('div', { class: 'emojis' }, CORES.map(c => {
+      const b = h('button', { class: c === cor ? 'sel' : '', style: `background:${c}`, onclick: () => { cor = c; cores.querySelectorAll('button').forEach(x => x.classList.toggle('sel', x === b)); } });
+      return b;
+    }));
+    const extras = dados.apps.filter(a => a.Extra);
+    return h('div', { class: 'cartao-aj' },
+      h('h2', {}, 'Adicionar um site'),
+      h('p', { class: 'ajuda' }, 'Qualquer site vira um cartão na tela inicial (Crunchyroll, Twitch, Pluto TV, um canal…). Abre em tela cheia, com setas e bloqueio de anúncios.'),
+      nome, end, cores,
+      h('button', { class: 'aj-btn primario', onclick: async () => {
+        try { await api('api/sites', { method: 'POST', body: JSON.stringify({ acao: 'criar', nome: nome.value, destino: end.value, cor }) }); toast('Site adicionado'); await carregar(); }
+        catch (e) { toast(e.message, 3500); }
+      } }, 'Adicionar'),
+      extras.length ? h('div', {}, extras.map(a => h('div', { class: 'linha-aj' },
+        h('span', { class: 'rot' }, a.Nome, h('small', {}, a.Destino)),
+        h('button', { class: 'aj-btn perigo', onclick: async () => {
+          if (!confirm(`Tirar ${a.Nome} da tela inicial?`)) return;
+          try { await api('api/sites', { method: 'POST', body: JSON.stringify({ acao: 'remover', id: a.ID }) }); toast('Site removido'); await carregar(); }
+          catch (e) { toast(e.message, 3500); }
+        } }, 'Remover')))) : null);
+  }
+
   function secaoTela(ef) {
     const cidade = h('input', { class: 'aj-input', placeholder: 'Ex.: Curitiba', value: ef.cidade || '', maxlength: 60 });
     const vol = h('input', { type: 'range', min: 0, max: 100, value: Math.round(ef.volumeIntro * 100), style: 'flex:1' });
@@ -171,6 +198,14 @@
       h('div', { class: 'linha-aj' }, h('span', { class: 'rot', style: 'flex:0 0 auto' }, 'Volume da abertura'), vol),
       h('div', { class: 'linha-aj' }, h('span', { class: 'rot' }, 'Protetor de tela'), prot),
       h('div', { class: 'linha-aj' }, h('span', { class: 'rot' }, 'Vídeos de fundo'), chave(ef.videosFundo, v => salvar({ VideosFundo: v }))),
+      (() => {
+        const d = h('select', { class: 'aj-input', style: 'flex:0 0 auto' }, [['auto', 'Automático'], ['leve', 'Leve'], ['completo', 'Completo']].map(([v, t]) => {
+          const o = h('option', { value: v }, t); if (v === ef.desempenho) o.selected = true; return o;
+        }));
+        d.onchange = () => salvar({ Desempenho: d.value });
+        return h('div', { class: 'linha-aj' }, h('span', { class: 'rot' }, 'Desempenho', h('small', {}, 'Leve tira animações e vídeos (PC fraco). Automático decide sozinho.')), d);
+      })(),
+      h('div', { class: 'linha-aj' }, h('span', { class: 'rot' }, 'Mostrar CPU, memória e disco', h('small', {}, 'Uma linha embaixo do relógio')), chave(ef.mostrarStats, v => salvar({ MostrarStats: v }))),
       h('div', { class: 'linha-aj' }, h('span', { class: 'rot' }, 'Vídeo de fundo geral', h('small', {}, dados.fundo ? 'Configurado' : 'Toca quando nenhum app está selecionado')),
         ...botaoEnvio(dados.fundo ? 'Trocar' : 'Escolher', 'fundo', 'video'),
         dados.fundo ? h('button', { class: 'aj-btn perigo', onclick: () => apagarMidia('fundo', 'video') }, 'Tirar') : null));
@@ -214,7 +249,7 @@
   function desenhar() {
     const aj = dados.ajustes;
     if (aj.crianca.ativo) { corpo.replaceChildren(secaoCrianca(aj, dados.ajustes.temPin)); return; }
-    corpo.replaceChildren(secaoPerfis(aj), secaoApps(aj), secaoTela(dados.efetivo), secaoCrianca(aj, dados.ajustes.temPin));
+    corpo.replaceChildren(secaoPerfis(aj), secaoApps(aj), secaoSites(aj), secaoTela(dados.efetivo), secaoCrianca(aj, dados.ajustes.temPin));
   }
 
   $('#btn-ajustes').onclick = () => { tela('ajustes'); corpo.replaceChildren(h('p', { style: 'color:var(--suave)' }, 'Carregando…')); carregar(); };

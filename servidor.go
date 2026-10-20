@@ -39,6 +39,7 @@ type Servidor struct {
 	timer         Timer
 	midias        *Midias
 	clima         *Clima
+	medidor       Medidor
 	aj            *CofreAjustes
 	tentativasPin Limitador
 	conectados    atomic.Int32 // celulares com o controle aberto
@@ -223,7 +224,7 @@ type appPublico struct {
 }
 
 func (s *Servidor) appsPublicos() []appPublico {
-	vis := appsVisiveis(s.cfg.apps, s.aj.Ler())
+	vis := appsVisiveis(s.todosApps(), s.aj.Ler())
 	l := make([]appPublico, 0, len(vis))
 	for _, a := range vis {
 		l = append(l, appPublico{a.ID, a.Nome, a.Cor, a.Cor2, a.Descricao})
@@ -308,7 +309,7 @@ func idValido(id string) bool {
 }
 
 func (s *Servidor) acharApp(id string) (App, bool) {
-	for _, a := range s.cfg.apps {
+	for _, a := range s.todosApps() {
 		if a.ID == id {
 			return a, true
 		}
@@ -318,7 +319,7 @@ func (s *Servidor) acharApp(id string) (App, bool) {
 
 func (s *Servidor) abrirApp(id string) error {
 	aj := s.aj.Ler()
-	for _, a := range appsVisiveis(s.cfg.apps, aj) {
+	for _, a := range appsVisiveis(s.todosApps(), aj) {
 		if a.ID == id {
 			a.Perfil = perfilNavegador(a, aj) // cada perfil com os próprios logins
 			return s.ger.Abrir(a)
@@ -349,6 +350,8 @@ func (s *Servidor) estadoTV(w http.ResponseWriter, r *http.Request) {
 		"videosFundo":     s.videosFundo(),
 		"perfil":          s.perfilPublico(),
 		"perfis":          aj.Perfis,
+		"desempenho":      s.desempenho(),
+		"stats":           s.statsSe(aj.MostrarStats),
 		"perguntarPerfil": aj.PerguntarPerfil,
 		"crianca":         aj.Crianca.Ativo,
 		"sons":            s.sons(),
@@ -563,4 +566,12 @@ func (s *Servidor) semCrianca(f http.HandlerFunc) http.HandlerFunc {
 		}
 		f(w, r)
 	}
+}
+
+func (s *Servidor) statsSe(ligado bool) *Stats {
+	if !ligado {
+		return nil
+	}
+	st := s.medidor.Atual()
+	return &st
 }
