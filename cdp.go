@@ -12,9 +12,9 @@ import (
 	"github.com/gorilla/websocket"
 )
 
-// injetarSetas conecta no navegador pela porta de depuração local e coloca o script de
-// navegação por setas em cada página (agora e nas próximas que abrirem).
-func injetarSetas(ctx context.Context, porta int, script string) {
+// injetarPaginas conecta no navegador pela porta de depuração local e, em cada página (agora e
+// nas próximas), coloca os scripts (setas, anúncios) e bloqueia os endereços de anúncio.
+func injetarPaginas(ctx context.Context, porta int, scripts []string, bloquear []string) {
 	var mu sync.Mutex
 	ligados := map[string]bool{}
 	cli := &http.Client{Timeout: 2 * time.Second}
@@ -49,8 +49,8 @@ func injetarSetas(ctx context.Context, porta int, script string) {
 			}
 			id, ws := a.ID, a.WebSocketDebuggerURL
 			go func() {
-				if err := sessaoCDP(ctx, ws, script); err != nil {
-					log.Printf("setas: página %s: %v", id, err)
+				if err := sessaoCDP(ctx, ws, scripts, bloquear); err != nil {
+					log.Printf("injetar: página %s: %v", id, err)
 				}
 				mu.Lock()
 				delete(ligados, id)
@@ -61,7 +61,7 @@ func injetarSetas(ctx context.Context, porta int, script string) {
 }
 
 // sessaoCDP fica conectada enquanto a página existir (o script some se a conexão cair).
-func sessaoCDP(ctx context.Context, wsURL, script string) error {
+func sessaoCDP(ctx context.Context, wsURL string, scripts []string, bloquear []string) error {
 	d := websocket.Dialer{HandshakeTimeout: 3 * time.Second}
 	c, _, err := d.DialContext(ctx, wsURL, nil)
 	if err != nil {
@@ -69,9 +69,19 @@ func sessaoCDP(ctx context.Context, wsURL, script string) error {
 	}
 	defer c.Close()
 	go func() { <-ctx.Done(); c.Close() }()
-	msgs := []map[string]any{
-		{"id": 1, "method": "Page.addScriptToEvaluateOnNewDocument", "params": map[string]any{"source": script}},
-		{"id": 2, "method": "Runtime.evaluate", "params": map[string]any{"expression": script}},
+	var msgs []map[string]any
+	id := 0
+	add := func(metodo string, params map[string]any) {
+		id++
+		msgs = append(msgs, map[string]any{"id": id, "method": metodo, "params": params})
+	}
+	if len(bloquear) > 0 {
+		add("Network.enable", map[string]any{})
+		add("Network.setBlockedURLs", map[string]any{"urls": bloquear})
+	}
+	for _, sc := range scripts {
+		add("Page.addScriptToEvaluateOnNewDocument", map[string]any{"source": sc})
+		add("Runtime.evaluate", map[string]any{"expression": sc})
 	}
 	for _, m := range msgs {
 		if err := c.WriteJSON(m); err != nil {

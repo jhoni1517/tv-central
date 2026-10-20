@@ -165,6 +165,7 @@
       h('h2', {}, 'Tela inicial'),
       h('div', { class: 'linha-aj' }, h('span', { class: 'rot' }, 'Clima', h('small', {}, 'Cidade para mostrar a temperatura')),),
       h('div', { class: 'linha-aj' }, cidade, h('button', { class: 'aj-btn', onclick: () => salvar({ Cidade: cidade.value }, cidade.value ? 'Cidade salva' : 'Clima desligado') }, 'Salvar')),
+      h('div', { class: 'linha-aj' }, h('span', { class: 'rot' }, 'Bloquear anúncios', h('small', {}, 'Anúncios e rastreadores nos sites, e anúncios do YouTube')), chave(ef.bloquearAnuncios, v => salvar({ BloquearAnuncios: v }, v ? 'Bloqueio ligado: vale ao abrir o próximo app' : 'Bloqueio desligado'))),
       h('div', { class: 'linha-aj' }, h('span', { class: 'rot' }, 'Sons ao navegar'), chave(ef.sons, v => salvar({ Sons: v }))),
       h('div', { class: 'linha-aj' }, h('span', { class: 'rot' }, 'Abertura com música ao ligar'), chave(ef.intro, v => salvar({ Intro: v }))),
       h('div', { class: 'linha-aj' }, h('span', { class: 'rot', style: 'flex:0 0 auto' }, 'Volume da abertura'), vol),

@@ -26,6 +26,11 @@ func scriptSetas() string {
 	return string(b)
 }
 
+func scriptAnuncios() string {
+	b, _ := arquivosWeb.ReadFile("web/injetar/anuncios.js")
+	return string(b)
+}
+
 type Servidor struct {
 	cfg           Config
 	par           *Pareamento

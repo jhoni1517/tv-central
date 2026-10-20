@@ -27,7 +27,8 @@ type Gerente struct {
 	cancelar         context.CancelFunc
 	launcherPID      int
 	launcherVivo     bool
-	naAreaDeTrabalho bool // a pessoa pediu a área de trabalho: não reabre a tela inicial sozinho
+	naAreaDeTrabalho bool
+	bloquearAnuncios func() bool // ajuste do painel (nil = ligado) // a pessoa pediu a área de trabalho: não reabre a tela inicial sozinho
 }
 
 func novoGerente(dados string, porta int) *Gerente {
@@ -206,8 +207,18 @@ func (g *Gerente) vigiarApp(p *os.Process, app App) {
 	ctx, cancel := context.WithCancel(context.Background())
 	g.cancelar = cancel
 	_ = os.WriteFile(filepath.Join(g.dados, "app.pid"), []byte(app.ID+" "+strconv.Itoa(p.Pid)), 0o644)
-	if app.Tipo != "programa" && app.usaSetas() {
-		go injetarSetas(ctx, portaDepuracao, scriptSetas())
+	if app.Tipo != "programa" {
+		var scripts, bloquear []string
+		if app.usaSetas() {
+			scripts = append(scripts, scriptSetas())
+		}
+		if g.bloquearAnuncios == nil || g.bloquearAnuncios() {
+			scripts = append(scripts, scriptAnuncios())
+			bloquear = padroesBloqueio()
+		}
+		if len(scripts) > 0 || len(bloquear) > 0 {
+			go injetarPaginas(ctx, portaDepuracao, scripts, bloquear)
+		}
 	}
 	go func() {
 		_, _ = p.Wait()

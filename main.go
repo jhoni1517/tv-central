@@ -107,6 +107,7 @@ func rodar(op Opcoes) {
 		log.Printf("ajustes: %v (usando padrão)", err)
 	}
 	srv := novoServidor(cfg, par, ger, aj)
+	ger.bloquearAnuncios = srv.bloquearAnuncios
 	if op.AtualizadoDe != "" {
 		log.Printf("atualizado de %s para %s", op.AtualizadoDe, versao)
 		srv.novidade = fmt.Sprintf("Atualizado para a versão %s", versao)

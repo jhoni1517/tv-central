@@ -73,7 +73,7 @@ func (s *Servidor) lerAjustes(w http.ResponseWriter, r *http.Request) {
 func (s *Servidor) efetivo() map[string]any {
 	return map[string]any{
 		"cidade": s.cidade(), "sons": s.sons(), "intro": s.intro(), "volumeIntro": s.volumeIntro(),
-		"protetorMin": s.protetorMin(), "videosFundo": s.videosFundo(),
+		"protetorMin": s.protetorMin(), "videosFundo": s.videosFundo(), "bloquearAnuncios": s.bloquearAnuncios(),
 	}
 }
 
@@ -107,6 +107,13 @@ func (s *Servidor) protetorMin() int {
 	}
 	return s.cfg.protetorMin()
 }
+func (s *Servidor) bloquearAnuncios() bool {
+	if a := s.aj.Ler(); a.BloquearAnuncios != nil {
+		return *a.BloquearAnuncios
+	}
+	return true
+}
+
 func (s *Servidor) videosFundo() bool {
 	if a := s.aj.Ler(); a.VideosFundo != nil {
 		return *a.VideosFundo
@@ -116,15 +123,16 @@ func (s *Servidor) videosFundo() bool {
 
 func (s *Servidor) mudarAjustes(w http.ResponseWriter, r *http.Request) {
 	var req struct {
-		Ordem           *[]string
-		Ocultos         *[]string
-		Cidade          *string
-		Sons            *bool
-		Intro           *bool
-		VolumeIntro     *float64
-		ProtetorMin     *int
-		VideosFundo     *bool
-		PerguntarPerfil *bool
+		Ordem            *[]string
+		Ocultos          *[]string
+		Cidade           *string
+		Sons             *bool
+		Intro            *bool
+		VolumeIntro      *float64
+		ProtetorMin      *int
+		VideosFundo      *bool
+		PerguntarPerfil  *bool
+		BloquearAnuncios *bool
 	}
 	if !lerJSON(w, r, &req) {
 		return
@@ -156,6 +164,9 @@ func (s *Servidor) mudarAjustes(w http.ResponseWriter, r *http.Request) {
 		}
 		if req.VideosFundo != nil {
 			a.VideosFundo = req.VideosFundo
+		}
+		if req.BloquearAnuncios != nil {
+			a.BloquearAnuncios = req.BloquearAnuncios
 		}
 		if req.PerguntarPerfil != nil {
 			a.PerguntarPerfil = *req.PerguntarPerfil

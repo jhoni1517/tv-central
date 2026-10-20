@@ -17,14 +17,15 @@ import (
 // Ajustes feitos pelo painel do celular (ficam em ajustes.json; o config.json continua valendo
 // para o que não for mudado aqui).
 type Ajustes struct {
-	Ordem       []string `json:"ordem,omitempty"`   // ordem dos apps na tela inicial
-	Ocultos     []string `json:"ocultos,omitempty"` // apps escondidos para todos
-	Cidade      *string  `json:"cidade,omitempty"`
-	Sons        *bool    `json:"sons,omitempty"`
-	Intro       *bool    `json:"intro,omitempty"`
-	VolumeIntro *float64 `json:"volumeIntro,omitempty"`
-	ProtetorMin *int     `json:"protetorMin,omitempty"`
-	VideosFundo *bool    `json:"videosFundo,omitempty"`
+	Ordem            []string `json:"ordem,omitempty"`   // ordem dos apps na tela inicial
+	Ocultos          []string `json:"ocultos,omitempty"` // apps escondidos para todos
+	Cidade           *string  `json:"cidade,omitempty"`
+	Sons             *bool    `json:"sons,omitempty"`
+	Intro            *bool    `json:"intro,omitempty"`
+	VolumeIntro      *float64 `json:"volumeIntro,omitempty"`
+	ProtetorMin      *int     `json:"protetorMin,omitempty"`
+	VideosFundo      *bool    `json:"videosFundo,omitempty"`
+	BloquearAnuncios *bool    `json:"bloquearAnuncios,omitempty"`
 
 	Perfis          []Perfil `json:"perfis"`
 	PerfilAtual     string   `json:"perfilAtual"`
